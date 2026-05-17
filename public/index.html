@@ -5331,6 +5331,228 @@
       }
     }
 
+    /* Hero video layout, organic mask, and orbit label */
+    .hero {
+      --hero-video-fill: #fff7df;
+      --hero-video-line: rgba(17, 17, 17, .12);
+    }
+
+    .hero-grid {
+      grid-template-columns: minmax(0, 650px) minmax(340px, 500px) !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: clamp(30px, 4.6vw, 64px) !important;
+    }
+
+    .hero-grid>div:first-child,
+    .hero-copy {
+      order: 1 !important;
+      grid-column: 1;
+      grid-row: 1;
+      max-width: 650px !important;
+    }
+
+    .hero h1 {
+      max-width: 650px !important;
+      font-size: clamp(56px, 6vw, 94px) !important;
+      line-height: 1.01 !important;
+    }
+
+    .hero-visual {
+      display: block !important;
+      position: relative;
+      order: 2 !important;
+      grid-column: 2;
+      grid-row: 1;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 !important;
+      padding: 0 !important;
+      justify-self: end;
+      overflow: visible !important;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .hero-visual::before {
+      content: none !important;
+      display: none !important;
+    }
+
+    .hero .stats {
+      order: 3 !important;
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .hero-video-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      min-height: 520px;
+      overflow: visible;
+      background: transparent;
+      transform: translateZ(0);
+      filter: drop-shadow(0 30px 52px rgba(17, 17, 17, .16));
+    }
+
+    .hero-video-object {
+      overflow: visible;
+    }
+
+    .hero-video-foreign {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--hero-video-fill);
+    }
+
+    .hero-video {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      margin: 0;
+      padding: 0;
+    }
+
+    .hero-orbit-ribbon {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      display: block;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .hero-ribbon-rail {
+      fill: none;
+      stroke: var(--brand-yellow);
+      stroke-width: 24px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      opacity: .96;
+    }
+
+    .hero-ribbon-text {
+      fill: var(--brand-black);
+      font-size: 1.85px;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .hero-ribbon-text textPath {
+      dominant-baseline: middle;
+    }
+
+    .hero [data-hero-reveal] {
+      opacity: 0;
+      transform: translate3d(0, 20px, 0);
+      transition:
+        opacity 760ms var(--premium-ease),
+        transform 760ms var(--premium-ease);
+      transition-delay: var(--hero-reveal-delay, 0ms);
+      will-change: opacity, transform;
+    }
+
+    .hero.is-loaded [data-hero-reveal] {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+
+    @media(max-width:1080px) {
+      .hero-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 36px !important;
+      }
+
+      .hero-copy {
+        order: 1 !important;
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      .hero-visual {
+        order: 2 !important;
+        grid-column: auto;
+        grid-row: auto;
+        max-width: min(680px, 100%);
+        justify-self: start;
+      }
+
+      .hero .stats {
+        order: 3 !important;
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      .hero-video-frame {
+        aspect-ratio: 4 / 5;
+        min-height: 360px;
+      }
+
+      .hero-orbit-ribbon {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .hero-ribbon-rail {
+        stroke-width: 20px;
+      }
+
+      .hero-ribbon-text {
+        font-size: 1.65px;
+        letter-spacing: 0;
+      }
+    }
+
+    @media(max-width:720px) {
+      .hero-grid {
+        gap: 28px !important;
+      }
+
+      .hero h1 {
+        font-size: clamp(40px, 11.5vw, 50px) !important;
+        line-height: 1.06 !important;
+      }
+
+      .hero-visual {
+        max-width: 100%;
+      }
+
+      .hero-video-frame {
+        aspect-ratio: 4 / 5;
+        min-height: 250px;
+      }
+
+      .hero-orbit-ribbon {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .hero-ribbon-rail {
+        stroke-width: 17px;
+      }
+
+      .hero-ribbon-text {
+        font-size: 1.45px;
+        letter-spacing: 0;
+      }
+    }
+
     /* Typography QA: readable section titles and exact left alignment */
     .section-head {
       align-items: end !important;
@@ -5724,8 +5946,8 @@
         <li><a href="/contact" data-page="contact">Контакты</a></li>
       </ul>
       <div class="nav-actions"><a class="btn btn-primary nav-contact-btn" href="/#home-contacts" data-home-contact><i
-            class="fas fa-phone"></i> Связаться</a><button class="icon-btn" id="openDrawer" aria-label="Меню" aria-expanded="false" aria-controls="drawer"><i
-            class="fas fa-bars"></i></button></div>
+            class="fas fa-phone"></i> Связаться</a><button class="icon-btn" id="openDrawer" aria-label="Меню"
+          aria-expanded="false" aria-controls="drawer"><i class="fas fa-bars"></i></button></div>
     </div>
   </header>
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
@@ -5746,32 +5968,57 @@
     <section class="page active" id="page-home">
       <div class="hero">
         <div class="container hero-grid">
-          <div>
-            <h1 id="hero-title">Зал единоборств для <span>детей и взрослых</span></h1>
-            <p id="hero-text">Тренировки по вольной борьбе, боксу, кикбоксингу, дзюдо и самбо. Подберите группу по
+          <div class="hero-copy" aria-labelledby="hero-title">
+            <h1 id="hero-title" data-hero-reveal style="--hero-reveal-delay: 70ms">Зал единоборств для <span>детей и
+                взрослых</span></h1>
+            <p id="hero-text" data-hero-reveal style="--hero-reveal-delay: 190ms">Тренировки по вольной борьбе, боксу,
+              кикбоксингу, дзюдо и самбо. Подберите группу по
               уровню, полу и расписанию, познакомьтесь с тренерами и оставьте заявку на пробное занятие.</p>
-            <div class="hero-actions"><a class="btn btn-primary" href="/schedule" data-page="schedule"><i
-                  class="fas fa-calendar-days"></i> Посмотреть расписание</a><a class="btn btn-outline" href="/pricing"
-                data-page="pricing"><i class="fas fa-wallet"></i> Узнать цены</a></div>
-            <div class="stats">
-              <div class="stat"><strong>800м²</strong><span>пространство зала</span></div>
-              <div class="stat"><strong id="stat-directions">—</strong><span>направления</span></div>
-              <div class="stat"><strong id="stat-trainers">—</strong><span>тренеры</span></div>
-              <div class="stat"><strong>0₽</strong><span>первое занятие</span></div>
-            </div>
+            <div class="hero-actions" data-hero-reveal style="--hero-reveal-delay: 310ms"><a class="btn btn-primary"
+                href="/schedule" data-page="schedule"><i class="fas fa-calendar-days"></i> Посмотреть расписание</a><a
+                class="btn btn-outline" href="/pricing" data-page="pricing"><i class="fas fa-wallet"></i> Узнать
+                цены</a></div>
           </div>
-          <div class="hero-visual">
-            <div class="split-visual">
-              <div class="split-image"><img id="hero-ring-img" src="/assets/seed/hero-ring.jpg" width="640" height="960"
-                  alt="Ринг клуба ИМПЕРИАЛ" fetchpriority="high" decoding="async">
-                <div class="split-label">Ринг</div>
-              </div>
-              <div class="split-image"><img id="hero-mat-img" src="/assets/seed/hero-wrestling-hall.webp" width="640"
-                  height="960" alt="Борцовский зал клуба ИМПЕРИАЛ" fetchpriority="high" decoding="async">
-                <div class="split-label">Борцовский зал</div>
-              </div>
-            </div>
+          <div class="stats" data-hero-reveal style="--hero-reveal-delay: 430ms">
+            <div class="stat"><strong>800м²</strong><span>пространство зала</span></div>
+            <div class="stat"><strong id="stat-directions">—</strong><span>направления</span></div>
+            <div class="stat"><strong id="stat-trainers">—</strong><span>тренеры</span></div>
+            <div class="stat"><strong>0₽</strong><span>первое занятие</span></div>
           </div>
+          <figure class="hero-visual" aria-label="Видео школы единоборств ИМПЕРИАЛ">
+            <div class="hero-video-frame">
+              <svg class="hero-orbit-ribbon" viewBox="0 0 100 125" aria-hidden="true" focusable="false">
+                <defs>
+                  <mask id="hero-video-shape-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="125">
+                    <rect x="0" y="0" width="100" height="125" fill="black" />
+                    <path fill="white"
+                      d="M49 5.5 C64 3.8 80 11 83 25 C86 38 78 45 84 58 C91 74 95 92 83 106 C71 120 52 121 39 116 C24 110 12 95 14 78 C16 66 24 58 18 46 C10 29 17 13 33 8 C38 6.5 43 6 49 5.5 Z" />
+                  </mask>
+                  <path id="hero-ribbon-track"
+                    d="M49 5.5 C64 3.8 80 11 83 25 C86 38 78 45 84 58 C91 74 95 92 83 106 C71 120 52 121 39 116 C24 110 12 95 14 78 C16 66 24 58 18 46 C10 29 17 13 33 8 C38 6.5 43 6 49 5.5 Z" />
+                  <path id="hero-ribbon-text-track"
+                    d="M49 3 C65 1.2 82 8.5 85.5 23.5 C89 37.5 81 45 87 58 C94.5 75 98.5 94 85.5 108.5 C72.5 123 52 124.5 38 119 C22 113 9 97 11 77.5 C13 66 21 58 15.5 46 C7 28 14.5 10.5 32 5.5 C37.5 4 43 3.5 49 3 Z" />
+                </defs>
+                <path class="hero-ribbon-rail"
+                  d="M49 5.5 C64 3.8 80 11 83 25 C86 38 78 45 84 58 C91 74 95 92 83 106 C71 120 52 121 39 116 C24 110 12 95 14 78 C16 66 24 58 18 46 C10 29 17 13 33 8 C38 6.5 43 6 49 5.5 Z" />
+                <foreignObject class="hero-video-object" x="0" y="0" width="100" height="125"
+                  mask="url(#hero-video-shape-mask)">
+                  <div class="hero-video-foreign" xmlns="http://www.w3.org/1999/xhtml">
+                    <video class="hero-video" autoplay muted loop playsinline preload="metadata"
+                      poster="/assets/seed/hero-ring.jpg">
+                      <source src="/assets/hero-imperial.mp4" type="video/mp4" />
+                    </video>
+                  </div>
+                </foreignObject>
+                <text class="hero-ribbon-text">
+                  <textPath href="#hero-ribbon-text-track" startOffset="0%">
+                    ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•ИМПЕРИАЛ•
+                    <animate attributeName="startOffset" values="0%;-7.15%" dur="4s" repeatCount="indefinite" />
+                  </textPath>
+                </text>
+              </svg>
+            </div>
+          </figure>
         </div>
       </div>
 
@@ -6115,12 +6362,23 @@
     </div>
   </footer>
   <script>
-    try {
-      const ringSrc = localStorage.getItem('hero-ring-src');
-      const matSrc = localStorage.getItem('hero-mat-src');
-      if (ringSrc) document.getElementById('hero-ring-img').src = ringSrc;
-      if (matSrc) document.getElementById('hero-mat-img').src = matSrc;
-    } catch (error) { }
+    (() => {
+      const markHeroLoaded = () => {
+        requestAnimationFrame(() => {
+          document.querySelector('.hero')?.classList.add('is-loaded');
+
+          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.querySelector('.hero-orbit-ribbon')?.pauseAnimations?.();
+          }
+        });
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', markHeroLoaded, { once: true });
+      } else {
+        markHeroLoaded();
+      }
+    })();
   </script>
   <script src="/js/main.js?v=20260515-premium-redesign"></script>
 </body>
