@@ -6026,6 +6026,232 @@
       box-shadow: 0 12px 24px rgba(17, 17, 17, .12) !important;
     }
 
+    body.schedule-filter-sheet-open {
+      overflow: hidden;
+    }
+
+    .schedule-mobile-filter-trigger {
+      display: none;
+      width: 100%;
+      min-height: 60px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: -2px 0 18px;
+      padding: 11px 15px;
+      border: 1px solid rgba(17, 17, 17, .14);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, .82);
+      color: var(--premium-ink);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .82),
+        0 16px 36px rgba(28, 25, 18, .08);
+      text-align: left;
+      transition:
+        border-color 220ms var(--premium-ease-standard),
+        box-shadow 260ms var(--premium-ease),
+        transform 260ms var(--premium-ease);
+    }
+
+    .schedule-mobile-filter-trigger span {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .schedule-mobile-filter-trigger small {
+      color: var(--premium-muted);
+      font-size: 11px;
+      font-weight: 780;
+      letter-spacing: .08em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .schedule-mobile-filter-trigger strong {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      color: var(--premium-ink);
+      font-size: 16px;
+      font-weight: 860;
+      letter-spacing: 0;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .schedule-mobile-filter-trigger i {
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid rgba(17, 17, 17, .1);
+      border-radius: 50%;
+      background: rgba(255, 212, 0, .18);
+      color: var(--premium-ink);
+      font-size: 12px;
+    }
+
+    .schedule-mobile-filter-trigger[aria-expanded="true"] i {
+      transform: rotate(180deg);
+    }
+
+    .schedule-filter-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1120;
+      background: rgba(17, 17, 17, .38);
+      backdrop-filter: blur(7px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 240ms var(--premium-ease-standard), visibility 240ms var(--premium-ease-standard);
+      visibility: hidden;
+    }
+
+    .schedule-filter-sheet {
+      position: fixed;
+      right: max(12px, env(safe-area-inset-right));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      left: max(12px, env(safe-area-inset-left));
+      z-index: 1130;
+      max-height: min(78svh, 560px);
+      display: block;
+      overflow: hidden;
+      padding: 10px 16px 16px;
+      border: 1px solid rgba(17, 17, 17, .13);
+      border-radius: 16px 16px 11px 11px;
+      background: #fffdf8;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .86),
+        0 28px 80px rgba(17, 17, 17, .24);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(calc(100% + 28px));
+      transition:
+        opacity 240ms var(--premium-ease-standard),
+        transform 320ms var(--premium-ease),
+        visibility 240ms var(--premium-ease-standard);
+      visibility: hidden;
+    }
+
+    .schedule-filter-sheet-handle {
+      width: 42px;
+      height: 4px;
+      margin: 0 auto 14px;
+      border-radius: 999px;
+      background: rgba(17, 17, 17, .18);
+    }
+
+    .schedule-filter-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(17, 17, 17, .09);
+    }
+
+    .schedule-filter-sheet-head .eyebrow {
+      margin-bottom: 6px;
+      color: #9a7c00;
+      font-size: 11px;
+    }
+
+    .schedule-filter-sheet-head h2 {
+      margin: 0;
+      color: var(--premium-ink);
+      font-family: var(--display-font);
+      font-size: 28px;
+      line-height: .95;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .schedule-filter-sheet-close {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid rgba(17, 17, 17, .12);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--premium-ink);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
+    }
+
+    .schedule-filter-sheet-list {
+      max-height: min(56svh, 390px);
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding: 14px 0 2px;
+    }
+
+    .schedule-filter-sheet-option {
+      width: 100%;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 14px;
+      border: 1px solid rgba(17, 17, 17, .1);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, .72);
+      color: var(--premium-ink);
+      font-size: 15px;
+      font-weight: 820;
+      letter-spacing: 0;
+      line-height: 1.15;
+      text-align: left;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
+      transition:
+        background-color 180ms var(--premium-ease-standard),
+        border-color 180ms var(--premium-ease-standard),
+        transform 220ms var(--premium-ease);
+    }
+
+    .schedule-filter-sheet-option span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .schedule-filter-sheet-option i {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(17, 17, 17, .08);
+      color: transparent;
+      font-size: 11px;
+    }
+
+    .schedule-filter-sheet-option.active {
+      border-color: rgba(17, 17, 17, .24);
+      background: var(--premium-ink);
+      color: #fff;
+    }
+
+    .schedule-filter-sheet-option.active i {
+      background: var(--premium-yellow);
+      color: var(--premium-ink);
+    }
+
+    @media(min-width:721px) {
+      .schedule-mobile-filter-trigger,
+      .schedule-filter-sheet-backdrop,
+      .schedule-filter-sheet {
+        display: none !important;
+      }
+    }
+
     .price-card .btn,
     .card-footer .btn {
       min-height: 48px !important;
@@ -6110,11 +6336,259 @@
         font-size: 13px !important;
       }
 
+      #page-schedule .schedule-filters {
+        display: none !important;
+      }
+
+      .schedule-mobile-filter-trigger {
+        display: flex;
+      }
+
+      .schedule-filter-sheet-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+        visibility: visible;
+      }
+
+      .schedule-filter-sheet.active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+        visibility: visible;
+      }
+
       .price-card .btn,
       .card-footer .btn {
         min-height: 50px !important;
         font-size: 14px !important;
       }
+    }
+
+    /* Direction concept: title, discipline note, centered martial-art mark, focused actions */
+    #home-directions {
+      align-items: stretch;
+    }
+
+    #home-directions .direction-card {
+      min-height: 372px;
+      display: grid !important;
+      grid-template-rows: auto 1fr auto;
+      gap: 22px;
+      padding: 28px 26px 24px !important;
+      text-align: left;
+      isolation: isolate;
+      color: #111 !important;
+      background:
+        radial-gradient(85% 75% at 50% 52%, rgba(255, 212, 0, .16), transparent 66%),
+        linear-gradient(160deg, #fffef9 0%, color-mix(in srgb, var(--premium-yellow) 8%, #f7f2e8 92%) 100%) !important;
+      border: 1px solid rgba(25, 22, 16, .12) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .75),
+        0 22px 54px rgba(28, 25, 18, .09) !important;
+      overflow: hidden;
+    }
+
+    #home-directions .direction-card::before {
+      content: none !important;
+    }
+
+    #home-directions .direction-card::after {
+      content: none;
+    }
+
+    #home-directions .direction-card-copy {
+      position: relative;
+      z-index: 1;
+      min-height: 112px;
+    }
+
+    #home-directions .direction-card h3 {
+      max-width: 11ch;
+      margin-bottom: 10px;
+      color: #111 !important;
+      font-size: clamp(28px, 2.45vw, 36px) !important;
+      line-height: .95 !important;
+      text-transform: uppercase;
+      text-wrap: balance;
+    }
+
+    #home-directions .direction-card p {
+      max-width: 27ch;
+      color: rgba(17, 17, 17, .58) !important;
+      font-size: 16px !important;
+      line-height: 1.46 !important;
+    }
+
+    #home-directions .direction-icon {
+      align-self: center;
+      justify-self: center;
+      width: min(78%, 190px);
+      height: 150px;
+      margin: 0 !important;
+      border-radius: 0;
+      background: transparent !important;
+      color: var(--direction-color, var(--premium-yellow)) !important;
+      box-shadow: none !important;
+    }
+
+    #home-directions .direction-icon-image {
+      width: auto !important;
+      max-width: 100% !important;
+      height: 150px !important;
+      max-height: 100% !important;
+      display: block;
+      object-fit: contain;
+      filter: brightness(0);
+      opacity: .94;
+    }
+
+    #home-directions .direction-icon-image--kickboxing,
+    #home-directions .direction-icon-image--muaythai,
+    #home-directions .direction-icon-image--karate {
+      width: 100%;
+      height: 100%;
+    }
+
+    #home-directions .direction-icon-fallback {
+      color: #111;
+      font-size: 44px;
+    }
+
+    #home-directions .direction-meta {
+      display: none !important;
+    }
+
+    #home-directions .direction-actions {
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      gap: 10px;
+      margin-top: 0 !important;
+    }
+
+    #home-directions .direction-action {
+      width: 100%;
+      min-height: 50px !important;
+      padding: 0 14px !important;
+      border-radius: 10px !important;
+      font-size: 13px !important;
+      font-weight: 860 !important;
+      letter-spacing: 0 !important;
+      line-height: 1.15 !important;
+      white-space: normal !important;
+      text-wrap: balance;
+    }
+
+    #home-directions .direction-action i {
+      font-size: 12px;
+    }
+
+    #home-directions .direction-action--schedule {
+      color: #111 !important;
+      background: var(--premium-yellow) !important;
+      border: 1px solid color-mix(in srgb, var(--direction-color, #ffd400) 42%, rgba(17, 17, 17, .16)) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .5),
+        0 14px 30px color-mix(in srgb, var(--direction-color, #ffd400) 18%, transparent) !important;
+    }
+
+    #home-directions .direction-action--trainers {
+      color: #111 !important;
+      background: rgba(255, 255, 255, .68) !important;
+      border: 1px solid rgba(17, 17, 17, .16) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .54) !important;
+    }
+
+    @media(hover:hover) {
+      #home-directions .direction-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(25, 22, 16, .2) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .82),
+          0 30px 68px rgba(28, 25, 18, .14) !important;
+      }
+
+      #home-directions .direction-action:hover,
+      #home-directions .direction-action:focus-visible {
+        transform: translateY(-1px);
+      }
+
+      #home-directions .direction-action--trainers:hover,
+      #home-directions .direction-action--trainers:focus-visible {
+        background: #111 !important;
+        border-color: #111 !important;
+        color: #fff !important;
+      }
+    }
+
+    @media(max-width:980px) {
+      #home-directions .direction-card {
+        min-height: 350px;
+      }
+    }
+
+    @media(max-width:720px) {
+      #home-directions .direction-card {
+        min-height: auto;
+        padding: 24px 22px 22px !important;
+        gap: 20px;
+      }
+
+      #home-directions .direction-card-copy {
+        min-height: 0;
+      }
+
+      #home-directions .direction-card h3,
+      #home-directions .direction-card p {
+        max-width: 100%;
+      }
+
+      #home-directions .direction-icon {
+        width: min(76%, 166px);
+        height: 122px;
+      }
+
+      #home-directions .direction-icon-image {
+        width: auto !important;
+        max-width: 100% !important;
+        height: 122px !important;
+        max-height: 100% !important;
+      }
+
+      #home-directions .direction-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Unified card frame: no colored gradient rails */
+    .card::before,
+    .trainer-modal .card::before,
+    #home-directions .direction-card::before {
+      content: none !important;
+      display: none !important;
+    }
+
+    .card,
+    .summary-card,
+    .day-card,
+    .mobile-day-card,
+    .budget-rule,
+    .contact-item,
+    .form,
+    .weekly-table-wrap {
+      border-color: rgba(25, 22, 16, .12) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .72),
+        0 18px 44px rgba(28, 25, 18, .075) !important;
+    }
+
+    .card:hover,
+    .summary-card:hover,
+    .day-card:hover,
+    .mobile-day-card:hover,
+    .budget-rule:hover,
+    .contact-item:hover,
+    .form:focus-within {
+      border-color: rgba(25, 22, 16, .18) !important;
     }
 
     @media(prefers-reduced-motion:reduce) {
@@ -6370,7 +6844,7 @@
             <div>
               <div class="eyebrow">Секции</div>
               <h2 class="section-title">Популярные направления</h2>
-            </div><a class="btn btn-outline" href="/schedule" data-page="schedule">Все занятия</a>
+            </div><a class="btn btn-outline" href="/schedule" data-page="schedule" data-schedule-filter="all">Все занятия</a>
           </div>
           <div class="grid grid-3" id="home-directions"></div>
         </div>
@@ -6455,6 +6929,32 @@
           </div>
           <div class="mobile-hint">На телефоне расписание отображается компактными карточками по дням недели.</div>
           <div class="schedule-summary" id="schedule-summary"></div>
+          <div class="filters schedule-filters" id="scheduleFilters" aria-label="Фильтр расписания по направлениям">
+            <button class="filter-btn active" data-schedule-filter="all">Все</button>
+          </div>
+          <button class="schedule-mobile-filter-trigger" type="button" data-schedule-filter-open
+            aria-haspopup="dialog" aria-expanded="false" aria-controls="scheduleFilterSheet">
+            <span>
+              <small>Направление</small>
+              <strong data-schedule-filter-label>Все направления</strong>
+            </span>
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="schedule-filter-sheet-backdrop" data-schedule-filter-close aria-hidden="true"></div>
+          <div class="schedule-filter-sheet" id="scheduleFilterSheet" role="dialog" aria-modal="true"
+            aria-labelledby="scheduleFilterSheetTitle" aria-hidden="true">
+            <div class="schedule-filter-sheet-handle" aria-hidden="true"></div>
+            <div class="schedule-filter-sheet-head">
+              <div>
+                <div class="eyebrow">Фильтр</div>
+                <h2 id="scheduleFilterSheetTitle">Направление</h2>
+              </div>
+              <button class="schedule-filter-sheet-close" type="button" data-schedule-filter-close
+                aria-label="Закрыть фильтр"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <div class="schedule-filter-sheet-list" data-schedule-filter-sheet-list role="listbox"
+              aria-label="Направление для расписания"></div>
+          </div>
           <div id="schedule-board"></div>
         </div>
       </div>
@@ -6691,7 +7191,7 @@
       }
     })();
   </script>
-  <script src="/js/main.js?v=20260518-premium-select-layer"></script>
+  <script src="/js/main.js?v=20260519-schedule-filter-layout"></script>
 </body>
 
 </html>

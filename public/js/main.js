@@ -1,5 +1,5 @@
 const API_URL = window.location.origin;
-const state = { directions: [], trainers: [], pricing: [], gallery: [], settings: {}, trainerFilter: 'all' };
+const state = { directions: [], trainers: [], pricing: [], gallery: [], settings: {}, trainerFilter: 'all', scheduleFilter: 'all' };
 const GROUP_LABELS = { beginners:'Новички', advanced:'Продвинутые', competition:'Соревновательная группа', all:'Все уровни' };
 const AUDIENCE_LABELS = { men:'Мужчины', women:'Женщины', all:'Все' };
 const AGE_LABELS = { kids:'Дети', teens:'Подростки', adults:'Взрослые', all:'Все' };
@@ -21,6 +21,7 @@ const DAY_ALIASES = {
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 let premiumSelectDocumentBound = false;
+let scheduleFilterFocusTarget = null;
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -173,7 +174,7 @@ function resolvePageName() {
   return LEGACY_PAGE_MAP[pathPage] || 'home';
 }
 
-function openPage(name, push = true) {
+function openPage(name, push = true, pathOverride = '') {
   const pageName = VALID_PAGES.includes(name) ? name : 'home';
   $$('.page').forEach(page => page.classList.toggle('active', page.id === `page-${pageName}`));
   $$('[data-page]').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
@@ -181,8 +182,8 @@ function openPage(name, push = true) {
   window.scrollTo({ top: 0, behavior: scrollBehavior() });
   staggerActivePage(pageName);
 
-  const nextPath = PAGE_PATHS[pageName] || '/';
-  if (push && location.pathname !== nextPath) history.pushState({ page: pageName }, '', nextPath);
+  const nextPath = pathOverride || PAGE_PATHS[pageName] || '/';
+  if (push && `${location.pathname}${location.search}` !== nextPath) history.pushState({ page: pageName }, '', nextPath);
 }
 
 
@@ -209,11 +210,30 @@ function bindNavigation() {
     const link = event.target.closest('[data-page]');
     if (!link) return;
     event.preventDefault();
-    openPage(link.dataset.page);
+    if (link.dataset.trainerFilter) {
+      setTrainerFilter(link.dataset.trainerFilter);
+      renderTrainers({ refreshReveal: false });
+    }
+    if (link.dataset.scheduleFilter) {
+      setScheduleFilter(link.dataset.scheduleFilter);
+      renderSchedulePage();
+    }
+    const filterPath = link.dataset.trainerFilter || link.dataset.scheduleFilter ? link.getAttribute('href') : '';
+    openPage(link.dataset.page, true, filterPath && filterPath.startsWith('/') ? filterPath : '');
+    applyUrlFiltersForPage(link.dataset.page);
+    closeScheduleFilterSheet({ restoreFocus: false });
   });
 
-  window.addEventListener('popstate', () => openPage(resolvePageName(), false));
-  window.addEventListener('hashchange', () => openPage(resolvePageName(), false));
+  window.addEventListener('popstate', () => {
+    const pageName = resolvePageName();
+    openPage(pageName, false);
+    applyUrlFiltersForPage(pageName);
+  });
+  window.addEventListener('hashchange', () => {
+    const pageName = resolvePageName();
+    openPage(pageName, false);
+    applyUrlFiltersForPage(pageName);
+  });
 }
 
 function openDrawer() {
@@ -243,6 +263,101 @@ function closeDrawer() {
 function setTrainerFilter(filter = 'all') {
   state.trainerFilter = filter;
   $$('#trainerFilters .filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === filter));
+}
+
+function scheduleFilterLabel(filter = state.scheduleFilter) {
+  if (!filter || filter === 'all') return 'Все направления';
+  return getDirectionLabel(filter) || filter;
+}
+
+function scheduleFilterPath(filter = state.scheduleFilter) {
+  const value = filter || 'all';
+  return value === 'all' ? '/schedule' : `/schedule?direction=${encodeURIComponent(value)}`;
+}
+
+function setScheduleFilter(filter = 'all') {
+  state.scheduleFilter = filter || 'all';
+  $$('#scheduleFilters .filter-btn').forEach(btn => {
+    const active = btn.dataset.scheduleFilter === state.scheduleFilter || (state.scheduleFilter === 'all' && btn.dataset.scheduleFilter === 'all');
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  $$('[data-schedule-filter-option]').forEach(option => {
+    const active = option.dataset.scheduleFilterOption === state.scheduleFilter || (state.scheduleFilter === 'all' && option.dataset.scheduleFilterOption === 'all');
+    option.classList.toggle('active', active);
+    option.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  $$('[data-schedule-filter-label]').forEach(label => {
+    label.textContent = scheduleFilterLabel(state.scheduleFilter);
+  });
+}
+
+function applyScheduleFilter(filter = 'all', { push = true } = {}) {
+  setScheduleFilter(filter);
+  renderSchedulePage();
+  if (!push) return;
+  const nextPath = scheduleFilterPath(state.scheduleFilter);
+  if (`${location.pathname}${location.search}` !== nextPath) {
+    history.pushState({ page: 'schedule' }, '', nextPath);
+  }
+}
+
+function openScheduleFilterSheet() {
+  const sheet = $('#scheduleFilterSheet');
+  const backdrop = $('.schedule-filter-sheet-backdrop');
+  const trigger = $('[data-schedule-filter-open]');
+  if (!sheet || !trigger) return;
+  scheduleFilterFocusTarget = trigger;
+  sheet.classList.add('active');
+  backdrop?.classList.add('active');
+  sheet.setAttribute('aria-hidden', 'false');
+  trigger.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('schedule-filter-sheet-open');
+  const selectedOption = $('[data-schedule-filter-option].active', sheet) || $('[data-schedule-filter-option]', sheet);
+  requestAnimationFrame(() => selectedOption?.focus({ preventScroll: true }));
+}
+
+function closeScheduleFilterSheet({ restoreFocus = true } = {}) {
+  const sheet = $('#scheduleFilterSheet');
+  const backdrop = $('.schedule-filter-sheet-backdrop');
+  const trigger = $('[data-schedule-filter-open]');
+  const wasOpen = sheet?.classList.contains('active');
+  sheet?.classList.remove('active');
+  backdrop?.classList.remove('active');
+  sheet?.setAttribute('aria-hidden', 'true');
+  trigger?.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('schedule-filter-sheet-open');
+  if (restoreFocus && wasOpen) {
+    (scheduleFilterFocusTarget || trigger)?.focus({ preventScroll: true });
+  }
+  scheduleFilterFocusTarget = null;
+}
+
+function trainerFilterFromUrl() {
+  try {
+    return new URLSearchParams(location.search).get('direction') || '';
+  } catch {
+    return '';
+  }
+}
+
+function scheduleFilterFromUrl() {
+  try {
+    return new URLSearchParams(location.search).get('direction') || '';
+  } catch {
+    return '';
+  }
+}
+
+function applyUrlFiltersForPage(pageName = resolvePageName()) {
+  if (pageName === 'trainers') {
+    setTrainerFilter(trainerFilterFromUrl() || 'all');
+    renderTrainers({ refreshReveal: false });
+  }
+  if (pageName === 'schedule') {
+    setScheduleFilter(scheduleFilterFromUrl() || 'all');
+    renderSchedulePage();
+  }
 }
 
 function closeTrainerModal() {
@@ -345,16 +460,19 @@ function directionIconHtml(direction = {}) {
 }
 
 function directionCard(d) {
-  const trainerLimit = Math.max(0, Number(d.homeTrainerLimit ?? d.trainerLimit ?? 4) || 0);
-  const trainers = getTrainersForDirection(d).slice(0, trainerLimit);
-  const trainerRows = trainers.map(trainer => `<div class="direction-trainer-row"><span><i class="fas fa-user" aria-hidden="true"></i> Тренер</span><button class="direction-trainer-link" type="button" data-trainer-key="${escapeHtml(trainerKey(trainer))}" aria-label="Открыть карточку тренера ${escapeHtml(trainer.name)}"><span>${escapeHtml(trainer.name)}</span><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></button></div>`).join('');
-  const fallback = '<div><span>Тренеры</span><strong>Уточняйте у администратора</strong></div>';
+  const trainerFilter = d.slug || d.name || '';
+  const trainerHref = `/trainers?direction=${encodeURIComponent(trainerFilter)}`;
+  const scheduleHref = `/schedule?direction=${encodeURIComponent(trainerFilter)}`;
   return `<article class="card direction-card" style="--direction-color:${escapeHtml(d.color || d.accentColor || '#ffd400')}">
+    <div class="direction-card-copy">
+      <h3>${escapeHtml(d.name)}</h3>
+      <p>${escapeHtml(d.shortDescription || d.description || '')}</p>
+    </div>
     <div class="direction-icon">${directionIconHtml(d)}</div>
-    <h3>${escapeHtml(d.name)}</h3>
-    <p>${escapeHtml(d.shortDescription || d.description || '')}</p>
-    <div class="direction-meta">${trainerRows || fallback}</div>
-    <div class="card-footer"><button class="btn btn-primary" style="width:100%" data-page="schedule">Посмотреть расписание</button></div>
+    <div class="card-footer direction-actions">
+      <a class="btn btn-primary direction-action direction-action--schedule" href="${escapeHtml(scheduleHref)}" data-page="schedule" data-schedule-filter="${escapeHtml(trainerFilter)}"><span>Расписание</span><i class="fas fa-calendar-days" aria-hidden="true"></i></a>
+      <a class="btn btn-outline direction-action direction-action--trainers" href="${escapeHtml(trainerHref)}" data-page="trainers" data-trainer-filter="${escapeHtml(trainerFilter)}"><span>Тренеры</span><i class="fas fa-user-group" aria-hidden="true"></i></a>
+    </div>
   </article>`;
 }
 
@@ -542,6 +660,51 @@ function renderTrainerFilterButtons() {
   });
 }
 
+function renderScheduleFilterButtons() {
+  const wrap = $('#scheduleFilters');
+  const sheetList = $('[data-schedule-filter-sheet-list]');
+  if (!wrap && !sheetList) return;
+
+  const options = new Map();
+  state.directions
+    .filter(direction => direction.isActive !== false)
+    .forEach(direction => {
+      const value = direction.slug || direction.name;
+      const hasSchedule = (direction.schedule || []).some(slot => normalizeDays(slot.day || '').length && (slot.time || slot.startTime));
+      if (value && hasSchedule) options.set(value, direction.name || value);
+    });
+
+  if (state.scheduleFilter !== 'all' && !options.has(state.scheduleFilter)) {
+    state.scheduleFilter = 'all';
+  }
+
+  const entries = [...options.entries()].sort((a, b) => a[1].localeCompare(b[1], 'ru'));
+
+  if (wrap) {
+    wrap.innerHTML = '<button class="filter-btn" type="button" data-schedule-filter="all" aria-pressed="false">Все</button>' +
+      entries
+        .map(([value, label]) => `<button class="filter-btn" type="button" data-schedule-filter="${escapeHtml(value)}" aria-pressed="false">${escapeHtml(label)}</button>`)
+        .join('');
+  }
+
+  if (sheetList) {
+    sheetList.innerHTML = `<button class="schedule-filter-sheet-option" type="button" role="option" data-schedule-filter-option="all" aria-selected="false"><span>Все направления</span><i class="fas fa-check" aria-hidden="true"></i></button>` +
+      entries
+        .map(([value, label]) => `<button class="schedule-filter-sheet-option" type="button" role="option" data-schedule-filter-option="${escapeHtml(value)}" aria-selected="false"><span>${escapeHtml(label)}</span><i class="fas fa-check" aria-hidden="true"></i></button>`)
+        .join('');
+    markDecorativeIcons(sheetList);
+  }
+
+  setScheduleFilter(state.scheduleFilter);
+}
+
+function scheduleItemMatchesFilter(item, filter = state.scheduleFilter) {
+  if (!filter || filter === 'all') return true;
+  const normalizedFilter = String(filter).trim().toLowerCase();
+  return [item.directionSlug, item.directionName, getDirectionLabel(item.directionSlug), getDirectionLabel(item.directionName)]
+    .some(value => String(value || '').trim().toLowerCase() === normalizedFilter);
+}
+
 function scheduleAgeLabel(value) {
   const raw = value || 'all';
   const label = AGE_LABELS[raw] || raw || 'Все';
@@ -555,8 +718,9 @@ function scheduleAudienceLabel(value) {
 }
 
 function renderSchedulePage() {
-  const allSessions = flattenSchedule().filter(item => parseStartTime(item));
-  const totalDirections = state.directions.length;
+  const scheduleSessions = flattenSchedule().filter(item => parseStartTime(item));
+  const allSessions = scheduleSessions.filter(item => scheduleItemMatchesFilter(item));
+  const totalDirections = new Set(allSessions.map(item => item.directionSlug || item.directionName).filter(Boolean)).size;
   const totalSessions = allSessions.length;
   const trainers = new Set(allSessions.map(s => s.trainer).filter(Boolean)).size;
   const groupCount = new Set(allSessions.map(s => s.group).filter(Boolean)).size;
@@ -567,7 +731,7 @@ function renderSchedulePage() {
     <div class="summary-card"><strong>${groupCount || '—'}</strong><span>уровня подготовки</span></div>`;
 
   if (!allSessions.length) {
-    $('#schedule-board').innerHTML = '<div class="empty">Пока нет занятий в расписании.</div>';
+    $('#schedule-board').innerHTML = `<div class="empty">${state.scheduleFilter === 'all' ? 'Пока нет занятий в расписании.' : 'По выбранному направлению пока нет занятий в расписании.'}</div>`;
     return;
   }
 
@@ -875,6 +1039,7 @@ function render({ refreshReveal = true } = {}) {
   $('#stat-directions').textContent = state.directions.length || '—';
   $('#stat-trainers').textContent = state.trainers.length || '—';
   renderDirectionSelect();
+  renderScheduleFilterButtons();
   renderSchedulePage();
   setHeroImages();
   applySiteSettings();
@@ -990,6 +1155,29 @@ function bindFilters() {
     setTrainerFilter(btn.dataset.filter);
     renderTrainers();
   });
+
+  $('#scheduleFilters')?.addEventListener('click', event => {
+    const btn = event.target.closest('[data-schedule-filter]');
+    if (!btn) return;
+    applyScheduleFilter(btn.dataset.scheduleFilter);
+  });
+
+  $('[data-schedule-filter-open]')?.addEventListener('click', () => openScheduleFilterSheet());
+
+  document.addEventListener('click', event => {
+    const option = event.target.closest('[data-schedule-filter-option]');
+    if (option) {
+      event.preventDefault();
+      applyScheduleFilter(option.dataset.scheduleFilterOption);
+      closeScheduleFilterSheet();
+      return;
+    }
+
+    if (event.target.closest('[data-schedule-filter-close]')) {
+      event.preventDefault();
+      closeScheduleFilterSheet();
+    }
+  });
 }
 
 function bindForms() {
@@ -1083,6 +1271,14 @@ async function loadData({ refreshReveal = true } = {}) {
     state.pricing = pricing;
     state.gallery = gallery;
     state.settings = settings || {};
+    const initialTrainerFilter = trainerFilterFromUrl();
+    if (resolvePageName() === 'trainers' && initialTrainerFilter) {
+      state.trainerFilter = initialTrainerFilter;
+    }
+    const initialScheduleFilter = scheduleFilterFromUrl();
+    if (resolvePageName() === 'schedule' && initialScheduleFilter) {
+      state.scheduleFilter = initialScheduleFilter;
+    }
     render({ refreshReveal });
   } catch (error) {
     showToast('Ошибка загрузки данных сайта. Проверьте API.');
@@ -1101,7 +1297,10 @@ function boot() {
   bindForms();
   bindFocusRefresh();
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') closeTrainerModal();
+    if (event.key === 'Escape') {
+      closeTrainerModal();
+      closeScheduleFilterSheet();
+    }
   });
   $('#openDrawer')?.addEventListener('click', toggleDrawer);
   $('#drawerBackdrop')?.addEventListener('click', closeDrawer);
