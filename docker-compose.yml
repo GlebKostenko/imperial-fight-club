@@ -28,6 +28,8 @@ services:
       MONGODB_URI: mongodb://mongo:27017/apex-fight-club
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
     volumes:
+      - ./public:/app/public:ro
+      - ./admin:/app/admin:ro
       - ./server/uploads:/app/uploads
     depends_on:
       mongo:

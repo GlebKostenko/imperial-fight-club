@@ -15,12 +15,22 @@ const toastContainer = document.getElementById('toast-container');
 const navItems = document.querySelectorAll('.nav-item');
 const tabContents = document.querySelectorAll('.tab-content');
 
-let trainersData = [], directionsData = [], pricingData = [], galleryData = [], contactsData = [], siteSettingsData = {};
+let trainersData = [], directionsData = [], pricingData = [], galleryData = [], contactsData = [], directionIconsData = [], siteSettingsData = {};
 const SPORT_LABELS = { wrestling:'Вольная борьба', boxing:'Бокс', kickboxing:'Кикбоксинг', judo:'Дзюдо', sambo:'Самбо' };
 const AUDIENCE_LABELS = { men:'Мужчины', women:'Женщины', all:'Все' };
 const AGE_LABELS = { kids:'Дети', teens:'Подростки', adults:'Взрослые', all:'Все' };
 const GROUP_LABELS = { beginners:'Новички', advanced:'Продвинутые', competition:'Соревнования', all:'Все уровни' };
-const DIRECTION_ICON_OPTIONS = ['🤼', '🥊', '🥋', '🦵', '💪', '🏆', '🔥', '⚡', '🎯', '🏅', '👊'];
+const DIRECTION_ICON_IMAGE_OPTIONS = [
+    { value: '/assets/directions/boxing.png', label: 'boxing.png' },
+    { value: '/assets/directions/functional.png', label: 'functional.png' },
+    { value: '/assets/directions/judo.png', label: 'judo.png' },
+    { value: '/assets/directions/karate.png', label: 'karate.png' },
+    { value: '/assets/directions/kickboxing.png', label: 'kickboxing.png' },
+    { value: '/assets/directions/mma.png', label: 'mma.png' },
+    { value: '/assets/directions/muaythai.png', label: 'muaythai.png' },
+    { value: '/assets/directions/sambo.png', label: 'sambo.png' },
+    { value: '/assets/directions/wrestling.png', label: 'wrestling.png' }
+];
 const TRAINER_SOCIAL_OPTIONS = ['Telegram', 'Instagram', 'VK', 'YouTube', 'WhatsApp', 'Max', 'TikTok'];
 
 const WEEK_DAYS = [
@@ -137,10 +147,32 @@ function directionColor(direction = {}) {
     return direction.color || direction.accentColor || '#FFD700';
 }
 
-function directionIconOptions(selected = '🥊') {
-    const current = selected || '🥊';
-    const options = DIRECTION_ICON_OPTIONS.includes(current) ? DIRECTION_ICON_OPTIONS : [current, ...DIRECTION_ICON_OPTIONS];
-    return options.map(icon => `<option value="${escapeAttr(icon)}" ${current === icon ? 'selected' : ''}>${escapeAttr(icon)}</option>`).join('');
+function directionIconImageValue(direction = {}) {
+    const raw = String(direction.iconImage || direction.iconMask || direction.mask || '').trim();
+    if (raw) return raw.replace(/\.svg(\?.*)?$/i, '.png');
+    const slug = String(direction.slug || '').trim().toLowerCase();
+    const options = directionIconImageChoices();
+    return options.find(item => item.value.toLowerCase().includes(`/${slug}.`))?.value || options[0]?.value || '';
+}
+
+function directionIconImageChoices() {
+    const fromFiles = directionIconsData
+        .map(item => ({ value: item.url || item.value || '', label: item.label || item.name || item.url || item.value || '' }))
+        .filter(item => item.value);
+    return fromFiles.length ? fromFiles : DIRECTION_ICON_IMAGE_OPTIONS;
+}
+
+function directionIconImageOptions(selected = '') {
+    const choices = directionIconImageChoices();
+    const current = selected || choices[0]?.value || '';
+    const hasCurrent = choices.some(item => item.value === current);
+    const options = hasCurrent || !current ? choices : [{ value: current, label: 'Текущая иконка' }, ...choices];
+    return options.map(item => `<option value="${escapeAttr(item.value)}" ${current === item.value ? 'selected' : ''}>${escapeAttr(item.label)}</option>`).join('');
+}
+
+function directionIconImagePreview(src = '', className = 'direction-icon-image-preview') {
+    const value = src || directionIconImageChoices()[0]?.value || '';
+    return `<img class="${className}" src="${escapeAttr(value)}" alt="" width="42" height="42" loading="lazy" decoding="async">`;
 }
 
 function directionOptions(selected = '') {
@@ -656,8 +688,21 @@ async function uploadFile(file, type, cropOptions = {}) {
 
 // ========== LOAD DATA ==========
 async function loadAllData() {
-    await Promise.all([loadTrainers(), loadDirections(), loadPricing(), loadGallery(), loadContacts(), loadSiteSettings()]);
+    await Promise.all([loadDirectionIcons(), loadTrainers(), loadDirections(), loadPricing(), loadGallery(), loadContacts(), loadSiteSettings()]);
     enhanceFormControls(document);
+}
+
+async function loadDirectionIcons() {
+    try {
+        directionIconsData = await apiGet('/api/direction-icons');
+    } catch (e) {
+        console.warn('Не удалось загрузить список иконок направлений', e);
+        directionIconsData = DIRECTION_ICON_IMAGE_OPTIONS.map(item => ({
+            name: item.value.split('/').pop(),
+            label: item.label,
+            url: item.value
+        }));
+    }
 }
 
 async function loadTrainers() {
@@ -758,7 +803,7 @@ function renderSports() {
     }
     tbody.innerHTML = directionsData.map(d => `
         <tr>
-            <td><div class="direction-name-cell"><span class="direction-table-icon">${escapeAttr(d.icon || '🥊')}</span><div><strong>${escapeAttr(d.name || '')}</strong><br><small style="color:var(--gray-400)">${escapeAttr(d.shortDescription || '')}</small></div></div></td>
+            <td><div class="direction-name-cell"><span class="direction-table-icon">${directionIconImagePreview(directionIconImageValue(d), 'direction-icon-image-preview direction-icon-image-preview-table')}</span><div><strong>${escapeAttr(d.name || '')}</strong><br><small style="color:var(--gray-400)">${escapeAttr(d.shortDescription || '')}</small></div></div></td>
             <td><code>${escapeAttr(d.slug || '')}</code></td>
             <td><span class="color-pill"><span class="color-dot" style="background:${escapeAttr(directionColor(d))}"></span>${escapeAttr(directionColor(d))}</span></td>
             <td>${homeControlHtml('directions', d)}</td>
@@ -1081,6 +1126,7 @@ document.getElementById('add-direction-btn')?.addEventListener('click', () => {
 
 function getSportForm(direction = null) {
     const isEdit = !!direction;
+    const selectedIconImage = directionIconImageValue(direction || {});
     return `
         <form id="sport-form" data-id="${direction?._id || ''}">
             <div class="form-row">
@@ -1103,11 +1149,14 @@ function getSportForm(direction = null) {
                     <div class="hint">Доступны только два цвета: жёлтый и голубой.</div>
                 </div>
                 <div class="form-group">
-                    <label>Логотип направления</label>
-                    <select name="icon" class="direction-icon-select">
-                        ${directionIconOptions(direction?.icon || '🥊')}
-                    </select>
-                    <div class="hint">Выберите эмоджи, который будет отображаться на карточке направления.</div>
+                    <label>PNG-иконка направления</label>
+                    <div class="direction-icon-image-field">
+                        ${directionIconImagePreview(selectedIconImage, 'direction-icon-image-preview direction-icon-image-preview-form')}
+                        <select name="iconImage" class="direction-icon-image-select">
+                            ${directionIconImageOptions(selectedIconImage)}
+                        </select>
+                    </div>
+                    <div class="hint">Список показывает имена файлов из папки public/assets/directions.</div>
                 </div>
             </div>
             <div class="form-group">
@@ -1141,9 +1190,14 @@ function getSportForm(direction = null) {
 function setupSportForm() {
     const form = document.getElementById('sport-form');
     form.name?.addEventListener('input', () => { if (!form.slug.value || !form.dataset.id) form.slug.value = slugify(form.name.value); });
+    form.iconImage?.addEventListener('change', () => {
+        const preview = form.querySelector('.direction-icon-image-preview-form');
+        if (preview) preview.src = form.iconImage.value;
+    });
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const existing = form.dataset.id ? directionsData.find(d => d._id === form.dataset.id) : null;
+        const iconImage = form.iconImage.value || directionIconImageValue(existing || {});
         const formData = {
             name: form.name.value,
             slug: form.slug.value,
@@ -1155,7 +1209,9 @@ function setupSportForm() {
             homeTrainerLimit: Math.max(0, parseInt(form.homeTrainerLimit.value, 10) || 0),
             schedule: existing?.schedule || [],
             isActive: true,
-            icon: form.icon.value || '🥊',
+            icon: '',
+            iconImage,
+            iconMask: '',
             order: parseInt(form.order.value) || 0
         };
         try {

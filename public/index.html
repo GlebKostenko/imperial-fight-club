@@ -5611,6 +5611,198 @@
       letter-spacing: 0 !important;
     }
 
+    .direction-icon {
+      overflow: hidden;
+      background: var(--premium-ink) !important;
+      color: var(--premium-yellow) !important;
+    }
+
+    .direction-icon-image {
+      width: 40px;
+      height: 40px;
+      display: block;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+
+    .direction-icon-image--wrestling,
+    .direction-icon-image--judo,
+    .direction-icon-image--sambo {
+      width: 42px;
+      height: 42px;
+    }
+
+    .direction-icon-image--mma {
+      width: 40px;
+      height: 40px;
+    }
+
+    .direction-icon-image--kickboxing,
+    .direction-icon-image--muaythai,
+    .direction-icon-image--karate {
+      width: 43px;
+      height: 43px;
+    }
+
+    .direction-icon-fallback {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .field--premium-select {
+      position: relative;
+      z-index: 3;
+    }
+
+    .field--premium-select.is-open,
+    .field--premium-select:focus-within {
+      z-index: 40;
+    }
+
+    .premium-native-select {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      inset: auto auto 0 0;
+    }
+
+    .premium-direction-select {
+      position: relative;
+    }
+
+    .premium-direction-trigger {
+      width: 100%;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 14px 0 16px;
+      border: 1px solid rgba(17, 17, 17, .12);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 250, 240, .92));
+      color: var(--premium-ink);
+      font: inherit;
+      font-weight: 680;
+      letter-spacing: 0;
+      text-align: left;
+      cursor: pointer;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .8),
+        0 10px 24px rgba(17, 17, 17, .04);
+      transition:
+        border-color 220ms var(--premium-ease-standard),
+        box-shadow 260ms var(--premium-ease),
+        background-color 220ms var(--premium-ease-standard),
+        transform 260ms var(--premium-ease);
+    }
+
+    .premium-direction-trigger i {
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, .68), rgba(255, 212, 0, .22)),
+        rgba(17, 17, 17, .04);
+      border: 1px solid rgba(17, 17, 17, .1);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
+      color: var(--premium-ink);
+      font-size: 12px;
+      transition: transform 220ms var(--premium-ease-standard);
+      pointer-events: none;
+    }
+
+    .premium-direction-select.is-open .premium-direction-trigger {
+      border-color: rgba(17, 17, 17, .28);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .8),
+        0 18px 40px rgba(17, 17, 17, .1);
+    }
+
+    .premium-direction-select.is-open .premium-direction-trigger i {
+      transform: rotate(180deg);
+    }
+
+    .premium-direction-menu {
+      position: absolute;
+      z-index: 45;
+      inset: calc(100% + 8px) 0 auto;
+      display: grid;
+      gap: 3px;
+      max-height: 280px;
+      overflow: auto;
+      margin: 0;
+      padding: 8px;
+      list-style: none;
+      border: 1px solid rgba(17, 17, 17, .13);
+      border-radius: 10px;
+      background: rgba(255, 252, 244, .98);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .8),
+        0 24px 54px rgba(17, 17, 17, .14);
+      opacity: 0;
+      transform: translateY(-6px) scale(.985);
+      pointer-events: none;
+      transform-origin: top center;
+      transition:
+        opacity 180ms var(--premium-ease-standard),
+        transform 220ms var(--premium-ease);
+    }
+
+    .premium-direction-select.is-open .premium-direction-menu {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .premium-direction-option {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 11px 0 12px;
+      border-radius: 7px;
+      color: rgba(17, 17, 17, .74);
+      font-size: 15px;
+      font-weight: 680;
+      line-height: 1.2;
+      cursor: pointer;
+      transition:
+        background-color 160ms var(--premium-ease-standard),
+        color 160ms var(--premium-ease-standard);
+    }
+
+    .premium-direction-option::after {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: transparent;
+    }
+
+    .premium-direction-option:hover,
+    .premium-direction-option.is-active {
+      background: rgba(17, 17, 17, .06);
+      color: var(--premium-ink);
+    }
+
+    .premium-direction-option.is-selected {
+      background: var(--premium-ink);
+      color: #fff;
+    }
+
+    .premium-direction-option.is-selected::after {
+      background: var(--premium-yellow);
+      box-shadow: 0 0 0 4px rgba(255, 212, 0, .18);
+    }
+
     .contact-item p {
       color: rgba(17, 17, 17, .86) !important;
       font-weight: 640 !important;
@@ -5643,6 +5835,26 @@
       transition:
         background-color 240ms var(--premium-ease-standard),
         border-color 240ms var(--premium-ease-standard),
+        box-shadow 300ms var(--premium-ease),
+        transform 300ms var(--premium-ease);
+    }
+
+    .contact-item>i {
+      flex: 0 0 46px;
+      width: 46px !important;
+      height: 46px !important;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(17, 17, 17, .16) !important;
+      border-radius: 10px !important;
+      background: rgba(17, 17, 17, .1) !important;
+      color: var(--premium-ink) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .72) !important;
+      transition:
+        background-color 240ms var(--premium-ease-standard),
+        border-color 240ms var(--premium-ease-standard),
+        color 240ms var(--premium-ease-standard),
         box-shadow 300ms var(--premium-ease),
         transform 300ms var(--premium-ease);
     }
@@ -5869,6 +6081,15 @@
         background: rgba(255, 255, 255, .18);
         border-color: rgba(255, 255, 255, .28);
         color: var(--contact-on-brand);
+      }
+
+      .contact-item-link:hover>i {
+        background: rgba(17, 17, 17, .12) !important;
+        border-color: rgba(17, 17, 17, .2) !important;
+        color: var(--premium-ink) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .52) !important;
+        transform: scale(1.03);
       }
 
       .contact-item-link:hover .contact-card-arrow {
@@ -6206,7 +6427,7 @@
               <div class="field"><label>Направление</label><select name="direction" class="direction-select" required>
                   <option value="">Выберите направление</option>
                 </select></div>
-              <div class="field"><label>Удобное время</label><select name="time">
+              <div class="field"><label>Удобное время</label><select name="time" class="time-select">
                   <option value="">Любое</option>
                   <option value="morning">Утро</option>
                   <option value="day">День</option>
@@ -6328,7 +6549,7 @@
               <div class="field"><label>Направление</label><select name="direction" class="direction-select" required>
                   <option value="">Выберите направление</option>
                 </select></div>
-              <div class="field"><label>Удобное время</label><select name="time">
+              <div class="field"><label>Удобное время</label><select name="time" class="time-select">
                   <option value="">Любое</option>
                   <option value="morning">Утро</option>
                   <option value="day">День</option>
@@ -6470,7 +6691,7 @@
       }
     })();
   </script>
-  <script src="/js/main.js?v=20260515-premium-redesign"></script>
+  <script src="/js/main.js?v=20260518-premium-select-layer"></script>
 </body>
 
 </html>

@@ -20,6 +20,7 @@ const DAY_ALIASES = {
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+let premiumSelectDocumentBound = false;
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -298,13 +299,58 @@ function trainerKey(trainer = {}) {
   return String(trainer._id || trainer.id || trainer.slug || trainer.name || '');
 }
 
+const DIRECTION_ICONS = {
+  wrestling: '/assets/directions/wrestling.png',
+  boxing: '/assets/directions/boxing.png',
+  functional: '/assets/directions/functional.png',
+  mma: '/assets/directions/mma.png',
+  muaythai: '/assets/directions/muaythai.png',
+  thai: '/assets/directions/muaythai.png',
+  kickboxing: '/assets/directions/kickboxing.png',
+  judo: '/assets/directions/judo.png',
+  karate: '/assets/directions/karate.png',
+  sambo: '/assets/directions/sambo.png'
+};
+
+function directionIconKey(direction = {}) {
+  const image = String(direction.iconImage || direction.iconMask || direction.mask || '').trim().toLowerCase();
+  const imageKey = image.match(/\/?([a-z0-9_-]+)\.(?:png|webp|svg)(?:[?#].*)?$/)?.[1] || '';
+  if (imageKey && DIRECTION_ICONS[imageKey]) return imageKey;
+  const slug = String(direction.slug || '').trim().toLowerCase();
+  const name = String(direction.name || '').trim().toLowerCase();
+  if (DIRECTION_ICONS[slug]) return slug;
+  if (name.includes('mma') || name.includes('мма') || name.includes('смешан')) return 'mma';
+  if (name.includes('вольн') || name.includes('борьб')) return 'wrestling';
+  if (name.includes('тай')) return 'muaythai';
+  if (name.includes('кик')) return 'kickboxing';
+  if (name.includes('бокс')) return 'boxing';
+  if (name.includes('дзюдо')) return 'judo';
+  if (name.includes('карат')) return 'karate';
+  if (name.includes('самбо')) return 'sambo';
+  return '';
+}
+
+function directionIconSrc(direction = {}, iconKey = '') {
+  const custom = String(direction.iconImage || direction.iconMask || direction.mask || '').trim();
+  if (custom) return custom;
+  return DIRECTION_ICONS[iconKey] || '';
+}
+
+function directionIconHtml(direction = {}) {
+  const iconKey = directionIconKey(direction);
+  if (!iconKey) return `<span class="direction-icon-fallback" aria-hidden="true">${escapeHtml(direction.icon || '')}</span>`;
+  const src = `${directionIconSrc(direction, iconKey)}?v=20260518-png-icons`;
+  const label = escapeHtml(direction.name || 'Направление');
+  return `<img class="direction-icon-image direction-icon-image--${iconKey}" src="${escapeHtml(src)}" alt="${label}" width="42" height="42" loading="lazy" decoding="async">`;
+}
+
 function directionCard(d) {
   const trainerLimit = Math.max(0, Number(d.homeTrainerLimit ?? d.trainerLimit ?? 4) || 0);
   const trainers = getTrainersForDirection(d).slice(0, trainerLimit);
   const trainerRows = trainers.map(trainer => `<div class="direction-trainer-row"><span><i class="fas fa-user" aria-hidden="true"></i> Тренер</span><button class="direction-trainer-link" type="button" data-trainer-key="${escapeHtml(trainerKey(trainer))}" aria-label="Открыть карточку тренера ${escapeHtml(trainer.name)}"><span>${escapeHtml(trainer.name)}</span><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></button></div>`).join('');
   const fallback = '<div><span>Тренеры</span><strong>Уточняйте у администратора</strong></div>';
   return `<article class="card direction-card" style="--direction-color:${escapeHtml(d.color || d.accentColor || '#ffd400')}">
-    <div class="direction-icon" style="background:var(--direction-color)">${escapeHtml(d.icon || '🥊')}</div>
+    <div class="direction-icon">${directionIconHtml(d)}</div>
     <h3>${escapeHtml(d.name)}</h3>
     <p>${escapeHtml(d.shortDescription || d.description || '')}</p>
     <div class="direction-meta">${trainerRows || fallback}</div>
@@ -850,6 +896,90 @@ function renderDirectionSelect() {
     const current = select.value;
     select.innerHTML = options;
     select.value = current;
+  });
+  enhanceDirectionSelects();
+}
+
+function closePremiumDirectionSelects(except = null) {
+  $$('.premium-direction-select.is-open').forEach(root => {
+    if (root === except) return;
+    root.classList.remove('is-open');
+    root.closest('.field--premium-select')?.classList.remove('is-open');
+    $('.premium-direction-trigger', root)?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+function getPremiumSelect(field) {
+  return field?.querySelector('.direction-select, .time-select');
+}
+
+function syncPremiumDirectionSelect(select) {
+  const root = select.closest('.field')?.querySelector('.premium-direction-select');
+  if (!root) return;
+  const label = $('.premium-direction-label', root);
+  const menu = $('.premium-direction-menu', root);
+  const selected = select.options[select.selectedIndex];
+  if (label) label.textContent = selected?.textContent || select.options[0]?.textContent || '';
+  if (!menu) return;
+  menu.innerHTML = [...select.options].map((option, index) => {
+    const isSelected = option.value === select.value;
+    return `<li class="premium-direction-option${isSelected ? ' is-selected' : ''}" role="option" aria-selected="${isSelected}" data-value="${escapeHtml(option.value)}" data-option-index="${index}">${escapeHtml(option.textContent)}</li>`;
+  }).join('');
+}
+
+function enhanceDirectionSelects() {
+  if (!premiumSelectDocumentBound) {
+    premiumSelectDocumentBound = true;
+    document.addEventListener('click', event => {
+      const trigger = event.target.closest('.premium-direction-trigger');
+      if (trigger) {
+        const root = trigger.closest('.premium-direction-select');
+        const isOpen = root.classList.contains('is-open');
+        closePremiumDirectionSelects(root);
+        root.classList.toggle('is-open', !isOpen);
+        root.closest('.field--premium-select')?.classList.toggle('is-open', !isOpen);
+        trigger.setAttribute('aria-expanded', String(!isOpen));
+        return;
+      }
+
+      const option = event.target.closest('.premium-direction-option');
+      if (option) {
+        const field = option.closest('.field');
+        const select = getPremiumSelect(field);
+        if (select) {
+          select.value = option.dataset.value || '';
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          syncPremiumDirectionSelect(select);
+        }
+        closePremiumDirectionSelects();
+        return;
+      }
+
+      if (!event.target.closest('.premium-direction-select')) closePremiumDirectionSelects();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closePremiumDirectionSelects();
+    });
+  }
+
+  $$('.direction-select, .time-select').forEach(select => {
+    const field = select.closest('.field');
+    if (!field) return;
+    field.classList.add('field--premium-select');
+    select.classList.add('premium-native-select');
+
+    let root = field.querySelector('.premium-direction-select');
+    if (!root) {
+      const id = select.id || `direction-select-${Math.random().toString(36).slice(2)}`;
+      select.id = id;
+      root = document.createElement('div');
+      root.className = 'premium-direction-select';
+      root.innerHTML = `<button class="premium-direction-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}-menu"><span class="premium-direction-label"></span><i class="fas fa-chevron-down" aria-hidden="true"></i></button><ul class="premium-direction-menu" id="${id}-menu" role="listbox"></ul>`;
+      select.insertAdjacentElement('afterend', root);
+      select.addEventListener('change', () => syncPremiumDirectionSelect(select));
+      select.form?.addEventListener('reset', () => requestAnimationFrame(() => syncPremiumDirectionSelect(select)));
+    }
+    syncPremiumDirectionSelect(select);
   });
 }
 

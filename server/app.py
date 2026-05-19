@@ -33,6 +33,7 @@ UPLOAD_IMAGE_LIMITS = {
     "budget": 1800,
 }
 DEFAULT_UPLOAD_IMAGE_LIMIT = 1600
+DIRECTION_ICON_EXTENSIONS = {".png", ".webp", ".jpg", ".jpeg", ".svg"}
 UPLOAD_IMAGE_QUALITY = 82
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://mongo:27017/apex-fight-club")
@@ -413,6 +414,24 @@ async def get_settings():
     if not merged.get("contacts"):
         merged["contacts"] = DEFAULT_SETTINGS["contacts"]
     return merged
+
+
+@app.get("/api/direction-icons")
+async def get_direction_icons():
+    icon_dir = PUBLIC_DIR / "assets" / "directions"
+    if not icon_dir.exists():
+        return []
+    files = [
+        {
+            "name": path.name,
+            "label": path.name,
+            "url": f"/assets/directions/{path.name}",
+        }
+        for path in icon_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in DIRECTION_ICON_EXTENSIONS
+    ]
+    return sorted(files, key=lambda item: item["name"].lower())
+
 
 @app.put("/api/settings")
 async def update_settings(data: dict[str, Any], admin=Depends(get_current_admin)):
