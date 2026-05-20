@@ -630,6 +630,124 @@
       color: var(--dark)
     }
 
+    .faq-list {
+      display: grid;
+      gap: 12px;
+      max-width: 980px;
+      margin: 0 auto
+    }
+
+    .faq-item {
+      border: 1px solid rgba(15, 23, 42, .08);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 12px 34px rgba(15, 23, 42, .06);
+      overflow: hidden
+    }
+
+    .faq-item {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    .faq-question {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      width: 100%;
+      min-height: 64px;
+      padding: 18px 22px;
+      border: 0;
+      background: transparent;
+      color: var(--dark);
+      cursor: pointer;
+      font-size: 18px;
+      font-family: inherit;
+      font-weight: 900;
+      line-height: 1.25;
+      text-align: left
+    }
+
+    .faq-question:focus-visible {
+      outline: 3px solid rgba(255, 215, 0, .85);
+      outline-offset: -6px
+    }
+
+    .faq-question::after {
+      content: '+';
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--yellow);
+      color: var(--dark);
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      line-height: 1;
+      transition: transform .24s ease, background-color .24s ease
+    }
+
+    .faq-item.is-open .faq-question::after {
+      transform: rotate(45deg)
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: max-height .32s ease, opacity .24s ease, transform .24s ease
+    }
+
+    .faq-item.is-open .faq-answer {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    .faq-answer-inner {
+      padding: 0 22px 22px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+      max-width: 760px
+    }
+
+    .faq-answer a {
+      color: #9a7800;
+      font-weight: 900;
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px
+    }
+
+    .faq-answer a:hover {
+      color: var(--dark)
+    }
+
+    .faq-empty {
+      padding: 22px;
+      border: 1px dashed rgba(15, 23, 42, .18);
+      border-radius: 18px;
+      background: #fff;
+      color: var(--muted);
+      font-weight: 800;
+      text-align: center
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .faq-item {
+        opacity: 1;
+        transform: none;
+        animation: none
+      }
+
+      .faq-answer {
+        transition: none
+      }
+    }
+
     .features-list i {
       color: #b59200;
       margin-top: 4px
@@ -6260,6 +6378,11 @@
       color: inherit !important;
     }
 
+    #page-schedule .schedule-filters .filter-btn.active,
+    #trainerFilters .filter-btn.active {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 4px 10px rgba(17, 17, 17, .055) !important;
+    }
+
     .filter-btn--mobile-quick,
     .filter-more-btn {
       display: none !important;
@@ -6905,6 +7028,125 @@
           color-mix(in srgb, var(--session-accent, var(--premium-yellow)) 30%, #fff 70%),
           color-mix(in srgb, var(--session-accent, var(--premium-yellow)) 10%, #fff 90%)) !important;
     }
+
+    /* UI/UX Pro Max motion pass: calm viewport-triggered reveals across pages */
+    .stagger-item {
+      opacity: 0 !important;
+      transform: translate3d(0, 16px, 0) scale(.992) !important;
+      transition: none !important;
+      will-change: opacity, transform;
+    }
+
+    .stagger-item.stagger-ready {
+      transition:
+        opacity 620ms cubic-bezier(.16, 1, .3, 1),
+        transform 620ms cubic-bezier(.16, 1, .3, 1),
+        box-shadow 260ms cubic-bezier(.2, .8, .2, 1),
+        border-color 180ms ease !important;
+      transition-delay: calc(var(--stagger-index, 0) * 72ms) !important;
+    }
+
+    .stagger-item.is-visible {
+      opacity: 1 !important;
+      transform: translate3d(0, 0, 0) scale(1) !important;
+      will-change: auto;
+    }
+
+    @media(max-width:720px) {
+      .stagger-item {
+        transform: translate3d(0, 10px, 0) scale(.996) !important;
+      }
+
+      .stagger-item.stagger-ready {
+        transition-duration: 540ms, 540ms, 240ms, 180ms !important;
+        transition-delay: calc(var(--stagger-index, 0) * 56ms) !important;
+      }
+    }
+
+    /* Mobile bottom sheets: navigation and filters share one gesture model */
+    @media(max-width:720px) {
+      .drawer-backdrop {
+        top: 0 !important;
+        z-index: 1190 !important;
+        background: rgba(17, 17, 17, .38) !important;
+        backdrop-filter: blur(7px) !important;
+      }
+
+      .drawer {
+        inset: auto max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+        width: auto !important;
+        max-height: min(78svh, 560px) !important;
+        padding: 10px 16px 16px !important;
+        border: 1px solid rgba(17, 17, 17, .13) !important;
+        border-radius: 16px 16px 11px 11px !important;
+        background: #fffdf8 !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .86), 0 28px 80px rgba(17, 17, 17, .24) !important;
+        overflow: hidden auto !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+        transform: translateY(calc(100% + 28px)) !important;
+        transition: opacity 240ms var(--premium-ease-standard), transform 320ms var(--premium-ease), visibility 240ms var(--premium-ease-standard) !important;
+      }
+
+      .drawer::before {
+        content: '';
+        display: block;
+        width: 42px;
+        height: 4px;
+        margin: 0 auto 14px;
+        border-radius: 999px;
+        background: rgba(17, 17, 17, .18);
+      }
+
+      .drawer.active {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+        transform: translateY(0) !important;
+      }
+
+      .drawer ul {
+        gap: 8px !important;
+      }
+
+      .drawer a {
+        min-height: 54px !important;
+        padding: 0 14px !important;
+        border: 1px solid rgba(17, 17, 17, .1);
+        border-radius: 9px !important;
+        background: rgba(255, 255, 255, .72) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
+      }
+
+      .schedule-filter-sheet {
+        touch-action: pan-y;
+      }
+
+      .drawer.is-dragging,
+      .schedule-filter-sheet.is-dragging {
+        transition: none !important;
+      }
+
+      .schedule-filter-sheet-head {
+        justify-content: flex-start !important;
+      }
+
+      .schedule-filter-sheet-close {
+        display: none !important;
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      .stagger-item,
+      .stagger-item.stagger-ready,
+      .stagger-item.is-visible {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 
@@ -7096,37 +7338,6 @@
         </div>
       </div>
 
-      <section class="section">
-        <div class="container">
-          <div class="section-head">
-            <div>
-              <div class="eyebrow">О клубе</div>
-              <h2 class="section-title">Что важно знать до визита</h2>
-            </div>
-            <p class="section-text">Понятная структура занятий, группы по уровню и удобная запись. Всё, что нужно для
-              первого знакомства с залом — в одном месте.</p>
-          </div>
-          <div class="grid grid-3">
-            <div class="card feature"><i class="fas fa-user-shield"></i>
-              <h3>Тренеры-практики</h3>
-              <p>Опыт выступлений, преподавания и подготовки учеников разного уровня.</p>
-            </div>
-            <div class="card feature"><i class="fas fa-layer-group"></i>
-              <h3>Группы по уровню</h3>
-              <p>Для новичков, любителей и спортсменов — с понятным разделением по подготовке.</p>
-            </div>
-            <div class="card feature"><i class="fas fa-clock"></i>
-              <h3>Удобное расписание</h3>
-              <p>Утренние и вечерние тренировки, а также занятия для детей и взрослых.</p>
-            </div>
-            <div class="card feature"><i class="fas fa-shower"></i>
-              <h3>Душевые и раздевалки</h3>
-              <p>Современные душевые и удобные раздевалки для комфортного восстановления после тренировки.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section class="section soft">
         <div class="container">
           <div class="section-head">
@@ -7163,14 +7374,24 @@
         </div>
       </section>
 
+      <section class="section" id="home-faq">
+        <div class="container">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">FAQ</div>
+              <h2 class="section-title">Вопросы и ответы</h2>
+            </div>
+          </div>
+          <div class="faq-list" data-faq-list></div>
+        </div>
+      </section>
+
       <section class="section" id="home-contacts">
         <div class="container">
           <div class="section-head">
             <div>
               <div class="eyebrow">Контакты</div>
               <h2 class="section-title" data-contact-title>Свяжитесь с нами</h2>
-              <p class="section-text" data-contact-text>Оставьте заявку на пробное занятие или задайте вопрос — мы
-                быстро свяжемся с вами.</p>
             </div>
           </div>
           <div class="contact-grid">
@@ -7240,8 +7461,6 @@
                 <div class="eyebrow">Фильтр</div>
                 <h2 id="scheduleFilterSheetTitle">Направление</h2>
               </div>
-              <button class="schedule-filter-sheet-close" type="button" data-schedule-filter-close
-                aria-label="Закрыть фильтр"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="schedule-filter-sheet-list" data-schedule-filter-sheet-list role="listbox"
               aria-label="Направление для расписания"></div>
@@ -7272,8 +7491,6 @@
                 <div class="eyebrow">Фильтр</div>
                 <h2 id="trainerFilterSheetTitle">Направление</h2>
               </div>
-              <button class="schedule-filter-sheet-close" type="button" data-trainer-filter-close
-                aria-label="Закрыть фильтр"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="schedule-filter-sheet-list" data-trainer-filter-sheet-list role="listbox"
               aria-label="Направление тренера"></div>
@@ -7500,7 +7717,7 @@
       }
     })();
   </script>
-  <script src="/js/main.js?v=20260519-schedule-filter-layout"></script>
+  <script src="/js/main.js?v=20260520-home-faq"></script>
 </body>
 
 </html>

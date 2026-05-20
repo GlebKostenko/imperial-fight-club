@@ -60,6 +60,7 @@ function applyPremiumStagger(scope = document) {
     '.stats',
     '.schedule-summary',
     '.contact-grid',
+    '.faq-list',
     '.budget-rules',
     '.weekly-mobile',
     '#schedule-board'
@@ -107,9 +108,8 @@ function applyPremiumStagger(scope = document) {
             return rectA.top === rectB.top ? rectA.left - rectB.left : rectA.top - rectB.top;
           })
           .forEach((item, index) => {
-            item.style.setProperty('--stagger-index', Math.min(index, 8));
-            const timer = setTimeout(() => item.classList.add('is-visible'), index * 280);
-            cardRevealTimers.push(timer);
+            item.style.setProperty('--stagger-index', Math.min(index, 10));
+            requestAnimationFrame(() => item.classList.add('is-visible'));
           });
         });
       cardRevealObserver.unobserve(entry.target);
@@ -240,9 +240,11 @@ function bindNavigation() {
 }
 
 function openDrawer() {
-  $('#drawer')?.classList.add('active');
+  const drawer = $('#drawer');
+  drawer?.style.removeProperty('transform');
+  drawer?.classList.add('active');
   $('#drawerBackdrop')?.classList.add('active');
-  $('#drawer')?.setAttribute('aria-hidden', 'false');
+  drawer?.setAttribute('aria-hidden', 'false');
   $('#openDrawer')?.setAttribute('aria-expanded', 'true');
   $('#openDrawer')?.setAttribute('aria-label', 'Закрыть меню');
   document.body.style.overflow = 'hidden';
@@ -255,9 +257,11 @@ function toggleDrawer() {
   openDrawer();
 }
 function closeDrawer() {
-  $('#drawer')?.classList.remove('active');
+  const drawer = $('#drawer');
+  drawer?.classList.remove('active', 'is-dragging');
+  drawer?.style.removeProperty('transform');
   $('#drawerBackdrop')?.classList.remove('active');
-  $('#drawer')?.setAttribute('aria-hidden', 'true');
+  drawer?.setAttribute('aria-hidden', 'true');
   $('#openDrawer')?.setAttribute('aria-expanded', 'false');
   $('#openDrawer')?.setAttribute('aria-label', 'Меню');
   document.body.style.overflow = '';
@@ -332,6 +336,7 @@ function openScheduleFilterSheet() {
   const trigger = $('[data-schedule-filter-open]');
   if (!sheet || !trigger) return;
   scheduleFilterFocusTarget = trigger;
+  sheet.style.removeProperty('transform');
   sheet.classList.add('active');
   backdrop?.classList.add('active');
   sheet.setAttribute('aria-hidden', 'false');
@@ -346,7 +351,8 @@ function closeScheduleFilterSheet({ restoreFocus = true } = {}) {
   const backdrop = $('.schedule-filter-sheet-backdrop');
   const trigger = $('[data-schedule-filter-open]');
   const wasOpen = sheet?.classList.contains('active');
-  sheet?.classList.remove('active');
+  sheet?.classList.remove('active', 'is-dragging');
+  sheet?.style.removeProperty('transform');
   backdrop?.classList.remove('active');
   sheet?.setAttribute('aria-hidden', 'true');
   trigger?.setAttribute('aria-expanded', 'false');
@@ -363,6 +369,7 @@ function openTrainerFilterSheet() {
   const trigger = $('[data-trainer-filter-open]');
   if (!sheet || !trigger) return;
   trainerFilterFocusTarget = trigger;
+  sheet.style.removeProperty('transform');
   sheet.classList.add('active');
   backdrop?.classList.add('active');
   sheet.setAttribute('aria-hidden', 'false');
@@ -377,7 +384,8 @@ function closeTrainerFilterSheet({ restoreFocus = true } = {}) {
   const backdrop = $('.trainer-filter-sheet-backdrop');
   const trigger = $('[data-trainer-filter-open]');
   const wasOpen = sheet?.classList.contains('active');
-  sheet?.classList.remove('active');
+  sheet?.classList.remove('active', 'is-dragging');
+  sheet?.style.removeProperty('transform');
   backdrop?.classList.remove('active');
   sheet?.setAttribute('aria-hidden', 'true');
   trigger?.setAttribute('aria-expanded', 'false');
@@ -386,6 +394,96 @@ function closeTrainerFilterSheet({ restoreFocus = true } = {}) {
     (trainerFilterFocusTarget || trigger)?.focus({ preventScroll: true });
   }
   trainerFilterFocusTarget = null;
+}
+
+function bindSwipeToClose(sheet, closeFn) {
+  if (!sheet || sheet.dataset.swipeBound === 'true') return;
+  sheet.dataset.swipeBound = 'true';
+  let startY = 0;
+  let currentY = 0;
+  let pointerId = null;
+  let touchActive = false;
+
+  const canStartSwipe = target => {
+    const scrollArea = target?.closest?.('.schedule-filter-sheet-list');
+    return !scrollArea || scrollArea.scrollTop <= 0;
+  };
+
+  const beginDrag = y => {
+    startY = y;
+    currentY = 0;
+    sheet.classList.add('is-dragging');
+  };
+
+  const moveDrag = y => {
+    currentY = Math.max(0, y - startY);
+    sheet.style.setProperty('transform', `translateY(${currentY}px)`, 'important');
+  };
+
+  const endDrag = () => {
+    sheet.classList.remove('is-dragging');
+    const shouldClose = currentY > 70;
+    if (shouldClose) {
+      closeFn({ restoreFocus: false });
+      return;
+    }
+    sheet.style.removeProperty('transform');
+  };
+
+  sheet.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (!sheet.classList.contains('active')) return;
+    if (!canStartSwipe(event.target)) return;
+    pointerId = event.pointerId;
+    beginDrag(event.clientY);
+    sheet.setPointerCapture?.(pointerId);
+  });
+
+  sheet.addEventListener('pointermove', event => {
+    if (pointerId !== event.pointerId) return;
+    moveDrag(event.clientY);
+  });
+
+  const finish = event => {
+    if (pointerId !== event.pointerId) return;
+    sheet.releasePointerCapture?.(pointerId);
+    pointerId = null;
+    endDrag();
+  };
+
+  sheet.addEventListener('pointerup', finish);
+  sheet.addEventListener('pointercancel', finish);
+
+  sheet.addEventListener('touchstart', event => {
+    if (!sheet.classList.contains('active')) return;
+    if (!canStartSwipe(event.target)) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchActive = true;
+    beginDrag(touch.clientY);
+  }, { passive: true });
+
+  sheet.addEventListener('touchmove', event => {
+    if (!touchActive) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    const delta = touch.clientY - startY;
+    if (delta <= 0) return;
+    event.preventDefault();
+    moveDrag(touch.clientY);
+  }, { passive: false });
+
+  sheet.addEventListener('touchend', () => {
+    if (!touchActive) return;
+    touchActive = false;
+    endDrag();
+  });
+
+  sheet.addEventListener('touchcancel', () => {
+    if (!touchActive) return;
+    touchActive = false;
+    endDrag();
+  });
 }
 
 function trainerFilterFromUrl() {
@@ -406,11 +504,21 @@ function scheduleFilterFromUrl() {
 
 function applyUrlFiltersForPage(pageName = resolvePageName()) {
   if (pageName === 'trainers') {
-    setTrainerFilter(trainerFilterFromUrl() || 'all');
+    const requestedFilter = trainerFilterFromUrl() || 'all';
+    const requestedDirection = state.directions.find(d => directionMatchesFilterValue(d, requestedFilter));
+    const hasTrainerContent = requestedFilter === 'all' || state.trainers.some(trainer =>
+      trainer.isActive !== false && requestedDirection && getTrainerFilterValues(trainer).some(value => {
+        return String(value || '').trim().toLowerCase() === String(requestedFilter).trim().toLowerCase()
+          || directionMatchesFilterValue(requestedDirection, value);
+      })
+    );
+    setTrainerFilter(hasTrainerContent ? requestedFilter : 'all');
     renderTrainers({ refreshReveal: false });
   }
   if (pageName === 'schedule') {
-    setScheduleFilter(scheduleFilterFromUrl() || 'all');
+    const requestedFilter = scheduleFilterFromUrl() || 'all';
+    const direction = state.directions.find(d => directionMatchesFilterValue(d, requestedFilter));
+    setScheduleFilter(requestedFilter === 'all' || directionHasSchedule(direction) ? requestedFilter : 'all');
     renderSchedulePage();
   }
 }
@@ -458,7 +566,7 @@ function getTrainersForDirection(direction) {
   const slug = String(direction?.slug || '').trim().toLowerCase();
   const name = String(direction?.name || '').trim().toLowerCase();
   return state.trainers
-    .filter(trainer => getTrainerFilters(trainer).some(value => {
+    .filter(trainer => trainer.isActive !== false && getTrainerFilterValues(trainer).some(value => {
       const normalized = String(value || '').trim().toLowerCase();
       return normalized === slug || normalized === name;
     }))
@@ -516,8 +624,12 @@ function directionIconHtml(direction = {}) {
 
 function directionCard(d) {
   const trainerFilter = d.slug || d.name || '';
-  const trainerHref = `/trainers?direction=${encodeURIComponent(trainerFilter)}`;
-  const scheduleHref = `/schedule?direction=${encodeURIComponent(trainerFilter)}`;
+  const hasSchedule = directionHasSchedule(d);
+  const hasTrainers = getTrainersForDirection(d).length > 0;
+  const trainerHref = hasTrainers ? `/trainers?direction=${encodeURIComponent(trainerFilter)}` : '/trainers';
+  const scheduleHref = hasSchedule ? `/schedule?direction=${encodeURIComponent(trainerFilter)}` : '/schedule';
+  const scheduleFilterAttrs = hasSchedule ? ` data-schedule-filter="${escapeHtml(trainerFilter)}"` : '';
+  const trainerFilterAttrs = hasTrainers ? ` data-trainer-filter="${escapeHtml(trainerFilter)}"` : '';
   return `<article class="card direction-card" style="--direction-color:${escapeHtml(d.color || d.accentColor || '#ffd400')}">
     <div class="direction-card-copy">
       <h3>${escapeHtml(d.name)}</h3>
@@ -525,18 +637,30 @@ function directionCard(d) {
     </div>
     <div class="direction-icon">${directionIconHtml(d)}</div>
     <div class="card-footer direction-actions">
-      <a class="btn btn-primary direction-action direction-action--schedule" href="${escapeHtml(scheduleHref)}" data-page="schedule" data-schedule-filter="${escapeHtml(trainerFilter)}"><span>Расписание</span><i class="fas fa-calendar-days" aria-hidden="true"></i></a>
-      <a class="btn btn-outline direction-action direction-action--trainers" href="${escapeHtml(trainerHref)}" data-page="trainers" data-trainer-filter="${escapeHtml(trainerFilter)}"><span>Тренеры</span><i class="fas fa-user-group" aria-hidden="true"></i></a>
+      <a class="btn btn-primary direction-action direction-action--schedule" href="${escapeHtml(scheduleHref)}" data-page="schedule"${scheduleFilterAttrs}><span>Расписание</span><i class="fas fa-calendar-days" aria-hidden="true"></i></a>
+      <a class="btn btn-outline direction-action direction-action--trainers" href="${escapeHtml(trainerHref)}" data-page="trainers"${trainerFilterAttrs}><span>Тренеры</span><i class="fas fa-user-group" aria-hidden="true"></i></a>
     </div>
   </article>`;
 }
 
+function getTrainerFilterValues(t) {
+  const values = [];
+  if (Array.isArray(t.filters)) values.push(...t.filters);
+  if (Array.isArray(t.categories)) values.push(...t.categories);
+  if (t.category) values.push(t.category);
+  if (Array.isArray(t.specializations)) values.push(...t.specializations);
+  if (t.specialization) values.push(t.specialization);
+  if (Array.isArray(t.directions)) values.push(...t.directions);
+  if (t.direction) values.push(t.direction);
+  if (t.sport) values.push(t.sport);
+  return values
+    .flatMap(splitTrainerSpecialtyValue)
+    .map(value => String(value || '').trim())
+    .filter((value, index, arr) => value && arr.findIndex(item => normalizeFilterText(item) === normalizeFilterText(value)) === index);
+}
+
 function getTrainerFilters(t) {
-  if (Array.isArray(t.filters) && t.filters.length) return t.filters;
-  if (Array.isArray(t.categories) && t.categories.length) return t.categories;
-  if (t.category) return [t.category];
-  if (Array.isArray(t.specializations) && t.specializations.length) return t.specializations;
-  return t.specialization ? [t.specialization] : [];
+  return getTrainerFilterValues(t);
 }
 
 function getDirectionLabel(value) {
@@ -544,8 +668,35 @@ function getDirectionLabel(value) {
   return direction?.name || CATEGORY_LABELS[value] || value;
 }
 
+function splitTrainerSpecialtyValue(value = '') {
+  return String(value || '')
+    .split(/\s*[\/,;]\s*/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
 function getTrainerSpecialties(t) {
-  return getTrainerFilters(t).map(getDirectionLabel).join(' / ');
+  let values = [];
+  if (Array.isArray(t.specializations) && t.specializations.length) {
+    values = t.specializations;
+  } else if (t.specialization) {
+    values = splitTrainerSpecialtyValue(t.specialization);
+  } else if (Array.isArray(t.directions) && t.directions.length) {
+    values = t.directions;
+  } else if (t.direction) {
+    values = [t.direction];
+  } else if (t.category) {
+    values = [t.category];
+  } else if (t.sport) {
+    values = [t.sport];
+  }
+  const labels = values
+    .flatMap(splitTrainerSpecialtyValue)
+    .map(getDirectionLabel)
+    .map(value => String(value || '').trim())
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.findIndex(item => item.toLowerCase() === value.toLowerCase()) === index);
+  return labels.join(' / ');
 }
 
 function normalizeAchievements(value) {
@@ -706,6 +857,38 @@ function sortFilterEntries(entries = []) {
   return [...entries].sort((a, b) => directionOrderForValue(a[0]) - directionOrderForValue(b[0]) || a[1].localeCompare(b[1], 'ru'));
 }
 
+function normalizeFilterText(value = '') {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[\s_-]+/g, '')
+    .replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+function directionMatchesFilterValue(direction = {}, value = '') {
+  const targets = splitTrainerSpecialtyValue(value)
+    .map(normalizeFilterText)
+    .filter(Boolean);
+  if (!targets.length) return false;
+  const candidates = [
+    direction.slug,
+    direction.name,
+    CATEGORY_LABELS[direction.slug],
+    getDirectionLabel(direction.slug),
+    getDirectionLabel(direction.name),
+  ].map(normalizeFilterText).filter(Boolean);
+  return targets.some(target => candidates.includes(target));
+}
+
+function directionHasSchedule(direction = {}) {
+  return (direction.schedule || []).some(slot => {
+    const hasDay = normalizeDays(slot.day || '').length > 0;
+    const hasTime = !!(slot.time || slot.startTime);
+    return hasDay && hasTime;
+  });
+}
+
 function filterButtonHtml({ value, label, type, extraClass = '' }) {
   const attr = type === 'schedule' ? 'data-schedule-filter' : 'data-filter';
   const activeFilter = type === 'schedule' ? state.scheduleFilter : state.trainerFilter;
@@ -719,17 +902,15 @@ function renderTrainerFilterButtons() {
   if (!wrap) return;
 
   const options = new Map();
-  state.directions.forEach(d => {
-    const value = d.slug || d.name;
-    if (value) options.set(value, d.name || value);
-  });
-
-  state.trainers.forEach(trainer => {
-    getTrainerFilters(trainer).forEach(value => {
-      if (!value) return;
-      options.set(value, getDirectionLabel(value));
+  state.directions
+    .filter(direction => direction.isActive !== false)
+    .forEach(direction => {
+      const value = direction.slug || direction.name;
+      const hasTrainers = state.trainers.some(trainer =>
+        trainer.isActive !== false && getTrainerFilterValues(trainer).some(filterValue => directionMatchesFilterValue(direction, filterValue))
+      );
+      if (value && hasTrainers) options.set(value, direction.name || value);
     });
-  });
 
   if (state.trainerFilter !== 'all' && !options.has(state.trainerFilter)) {
     state.trainerFilter = 'all';
@@ -766,8 +947,7 @@ function renderScheduleFilterButtons() {
     .filter(direction => direction.isActive !== false)
     .forEach(direction => {
       const value = direction.slug || direction.name;
-      const hasSchedule = (direction.schedule || []).some(slot => normalizeDays(slot.day || '').length && (slot.time || slot.startTime));
-      if (value && hasSchedule) options.set(value, direction.name || value);
+      if (value && directionHasSchedule(direction)) options.set(value, direction.name || value);
     });
 
   if (state.scheduleFilter !== 'all' && !options.has(state.scheduleFilter)) {
@@ -824,10 +1004,10 @@ function renderSchedulePage() {
   const trainers = new Set(allSessions.flatMap(s => s.trainers || [s.trainer]).filter(name => name && name !== 'Тренер клуба')).size;
   const groupCount = new Set(allSessions.map(s => s.group).filter(Boolean)).size;
   $('#schedule-summary').innerHTML = `
-    <div class="summary-card"><strong>${totalDirections || '—'}</strong><span>направлений</span></div>
-    <div class="summary-card"><strong>${totalSessions || '—'}</strong><span>занятий в неделю</span></div>
-    <div class="summary-card"><strong>${trainers || '—'}</strong><span>тренеров в расписании</span></div>
-    <div class="summary-card"><strong>${groupCount || '—'}</strong><span>уровня подготовки</span></div>`;
+    <div class="summary-card"><strong>${totalDirections}</strong><span>направлений</span></div>
+    <div class="summary-card"><strong>${totalSessions}</strong><span>занятий в неделю</span></div>
+    <div class="summary-card"><strong>${trainers}</strong><span>тренеров в расписании</span></div>
+    <div class="summary-card"><strong>${groupCount}</strong><span>уровня подготовки</span></div>`;
 
   if (!allSessions.length) {
     $('#schedule-board').innerHTML = `<div class="empty">${state.scheduleFilter === 'all' ? 'Пока нет занятий в расписании.' : 'По выбранному направлению пока нет занятий в расписании.'}</div>`;
@@ -1049,6 +1229,90 @@ function applyLegalSettings() {
   if (note) note.style.display = legal.operatorName && legal.inn ? 'none' : '';
 }
 
+function defaultFaqItems() {
+  return [
+    { question: 'Что нужно взять с собой на первую тренировку?', answer: 'Достаточно взять спортивную форму, сменную обувь, а также полотенце и бутылку для воды. В зале есть дежурная экипировка — перчатки и шлемы, которую мы выдаём на каждом занятии, при желании тренер подробно проконсультирует вас и подскажет, какую именно экипировку и защиту лучше приобрести для дальнейших занятий.', order: 1, isActive: true },
+    { question: 'С какого возраста вы принимаете детей?', answer: 'Мы набираем детские группы начиная с 4 лет. Для малышей (4–6 лет) тренировки проходят в игровой форме с упором на общую физическую подготовку (ОФП), координацию и дисциплину. С 7 лет начинается более глубокое изучение базовой техники единоборств.', order: 2, isActive: true },
+    { question: 'Я никогда раньше не занимался. Меня сразу поставят в спарринг?', answer: 'Нет, это исключено. Все новички начинают с изучения базовой техники, стойки и перемещений. К парной отработке и спаррингам вы перейдете только тогда, когда будете технически и физически к этому готовы, и исключительно по вашему желанию.', order: 3, isActive: true },
+    { question: 'Есть ли в зале душевые и раздевалки?', answer: 'Да, зал полностью оборудован для тренировок. У нас есть мужские и женские раздевалки с индивидуальными шкафчиками и современные душевыми кабинами. Вы сможете спокойно привести себя в порядок после занятия.', order: 4, isActive: true },
+    { question: 'Предусмотрены ли у вас бюджетные (бесплатные) места?', answer: 'Да, мы поддерживаем развитие спорта и талантливых ребят. Бюджетные места предоставляются спортсменам, которые показывают высокие результаты, регулярно выступают на соревнованиях городского и регионального уровня, защищая честь клуба. Условия получения бюджетного места указаны на странице \\ref{Бюджетные места}{/budget}', order: 5, isActive: true },
+    { question: 'Как часто нужно тренироваться, чтобы увидеть результат?', answer: 'Для поддержания формы и освоения базы новичкам оптимально посещать зал 2–3 раза в неделю. Это дает мышцам время на восстановление, а нервной системе — на усвоение новых паттернов движений.', order: 6, isActive: true },
+    { question: 'Как записаться на первое занятие?', answer: 'Просто оставьте заявку в форме ниже. Наш администратор свяжется с вами, подберет удобное время, группу вашего уровня подготовки и ответит на оставшиеся вопросы.', order: 7, isActive: true },
+  ];
+}
+
+function getFaqItems() {
+  const source = Array.isArray(state.settings?.faq) ? state.settings.faq : defaultFaqItems();
+  return [...source]
+    .filter(item => item && item.isActive !== false && (item.question || item.answer))
+    .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+}
+
+function getFaqLinkMeta(url = '') {
+  const value = String(url).trim();
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(value)) {
+    return { href: value, external: /^https?:\/\//i.test(value) };
+  }
+  if (/^\/(?!\/)/.test(value)) {
+    return { href: value, external: false };
+  }
+  return null;
+}
+
+function renderFaqAnswer(value = '') {
+  const text = String(value);
+  const pattern = /\\ref\{([^{}]+)\}\{([^{}]+)\}/g;
+  let result = '';
+  let lastIndex = 0;
+  for (const match of text.matchAll(pattern)) {
+    result += escapeHtml(text.slice(lastIndex, match.index)).replace(/\n/g, '<br>');
+    const label = match[1].trim();
+    const url = match[2].trim();
+    const link = getFaqLinkMeta(url);
+    result += link
+      ? `<a href="${escapeHtml(link.href)}"${link.external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)}</a>`
+      : escapeHtml(match[0]);
+    lastIndex = match.index + match[0].length;
+  }
+  result += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>');
+  return result;
+}
+
+function setFaqAnswerState(item, open) {
+  const button = $('.faq-question', item);
+  const answer = $('.faq-answer', item);
+  if (!button || !answer) return;
+  item.classList.toggle('is-open', open);
+  button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  answer.setAttribute('aria-hidden', open ? 'false' : 'true');
+  answer.style.maxHeight = open ? `${answer.scrollHeight}px` : '0px';
+}
+
+function setupFaqInteractions() {
+  $$('.faq-item').forEach(item => {
+    setFaqAnswerState(item, false);
+    $('.faq-question', item)?.addEventListener('click', () => {
+      setFaqAnswerState(item, !item.classList.contains('is-open'));
+    });
+  });
+}
+
+function renderFaq() {
+  const items = getFaqItems();
+  $$('[data-faq-list]').forEach(list => {
+    list.innerHTML = items.length
+      ? items.map((item, index) => {
+          const answerId = `faq-answer-${index}`;
+          return `<div class="faq-item" style="--faq-index:${index}">
+            <button class="faq-question" type="button" aria-expanded="false" aria-controls="${answerId}">${escapeHtml(item.question || 'Вопрос')}</button>
+            <div class="faq-answer" id="${answerId}" aria-hidden="true"><div class="faq-answer-inner">${renderFaqAnswer(item.answer || '')}</div></div>
+          </div>`;
+        }).join('')
+      : '<div class="faq-empty">FAQ пока не заполнен.</div>';
+    setupFaqInteractions();
+  });
+}
+
 function applySiteSettings() {
   const settings = state.settings || {};
   const heroTitle = $('#hero-title');
@@ -1068,6 +1332,7 @@ function applySiteSettings() {
     $$('[data-footer-contact-list]').forEach(list => { list.innerHTML = (footerContacts.length ? footerContacts : contacts.slice(0, 3)).map(renderFooterContactItem).join(''); });
     $$('[data-footer-social-list]').forEach(list => { list.innerHTML = (socials.length ? socials : contacts.filter(isSocialContact)).map(renderFooterSocialItem).join('') || '<li>Соцсети скоро появятся</li>'; });
   }
+  renderFaq();
   const budget = settings.budget || {};
   $$('[data-budget-title]').forEach(el => { el.textContent = budget.title || 'Бюджетные места в школе единоборств'; });
   $$('[data-budget-intro]').forEach(el => { el.textContent = budget.intro || 'Информация о бесплатных и льготных местах для учеников клуба.'; });
@@ -1147,9 +1412,10 @@ function render({ refreshReveal = true } = {}) {
 }
 
 function renderTrainers({ refreshReveal = true } = {}) {
+  const activeDirection = state.directions.find(direction => directionMatchesFilterValue(direction, state.trainerFilter));
   const filtered = state.trainerFilter === 'all'
     ? state.trainers
-    : state.trainers.filter(t => getTrainerFilters(t).some(value => value === state.trainerFilter || getDirectionLabel(value) === getDirectionLabel(state.trainerFilter)));
+    : state.trainers.filter(t => activeDirection && getTrainerFilterValues(t).some(value => directionMatchesFilterValue(activeDirection, value)));
   $('#trainers-grid').innerHTML = filtered.map(t => trainerCard(t)).join('') || '<div class="empty">Тренеры не найдены.</div>';
   if (refreshReveal && $('#page-trainers')?.classList.contains('active')) staggerActivePage('trainers');
 }
@@ -1326,6 +1592,9 @@ function enhanceDirectionSelects() {
 }
 
 function bindFilters() {
+  bindSwipeToClose($('#scheduleFilterSheet'), closeScheduleFilterSheet);
+  bindSwipeToClose($('#trainerFilterSheet'), closeTrainerFilterSheet);
+
   $('#trainerFilters')?.addEventListener('click', event => {
     const openBtn = event.target.closest('[data-trainer-filter-open]');
     if (openBtn) {
@@ -1495,6 +1764,7 @@ function bindFocusRefresh() {
 
 function boot() {
   markDecorativeIcons();
+  bindSwipeToClose($('#drawer'), closeDrawer);
   bindNavigation();
   bindFilters();
   bindForms();
@@ -1502,6 +1772,7 @@ function boot() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       closeTrainerModal();
+      closeDrawer();
       closeScheduleFilterSheet();
       closeTrainerFilterSheet();
     }

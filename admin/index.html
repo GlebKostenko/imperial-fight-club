@@ -146,13 +146,17 @@ body{font-family:'Inter',sans-serif;background:var(--gray-50);color:var(--black)
 /* Settings order cards */
 .settings-contacts-list{display:grid;gap:12px;}
 .settings-contact-row{display:grid;grid-template-columns:minmax(120px,.8fr) minmax(140px,1fr) minmax(160px,1fr) minmax(180px,1.2fr) auto;gap:12px;align-items:end;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;background:var(--white);box-shadow:var(--shadow);}
+.faq-setting-row{grid-template-columns:minmax(220px,1fr) minmax(300px,1.35fr) minmax(100px,.45fr) auto;align-items:end}
+.faq-setting-row textarea{min-height:92px}
+.faq-active-control{display:flex;align-items:center;gap:8px;min-height:48px;font-size:13px;font-weight:800;color:var(--gray-700);text-transform:none;letter-spacing:0}
+.faq-active-control input{width:auto!important}
 .budget-rule-row{grid-template-columns:1fr!important;align-items:stretch}.budget-rule-row .remove-contact-setting{justify-self:start}.budget-rule-row textarea{min-height:100px}
 .settings-contact-row .form-group{margin-bottom:0;}
 .setting-row-actions{display:flex;gap:6px;align-items:center;}
 .setting-row-action{width:36px;height:36px;border:1px solid var(--gray-200);background:var(--gray-50);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--gray-600);}
 .setting-row-action:hover{background:var(--yellow);color:var(--black);border-color:var(--yellow);}
 .remove-contact-setting{width:36px;height:36px;border:0;background:#FEE2E2;color:var(--red);border-radius:10px;cursor:pointer;}
-@media(max-width:900px){.settings-contact-row{grid-template-columns:1fr}.setting-row-actions{justify-content:flex-end}}
+@media(max-width:900px){.settings-contact-row,.faq-setting-row{grid-template-columns:1fr}.setting-row-actions{justify-content:flex-end}}
 
 /* Image crop before upload */
 .crop-modal{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;padding:20px;}
@@ -287,7 +291,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .data-table td{border-bottom:1px solid #eee8da}
 .data-table tr:hover td{background:#fffaf0}
 .settings-card{max-width:760px;padding:30px}
-#tab-settings .settings-card,#tab-legal .settings-card,#tab-budget .settings-card{max-width:980px!important}
+#tab-settings .settings-card,#tab-legal .settings-card,#tab-budget .settings-card,#tab-faq .settings-card{max-width:980px!important}
 .settings-contact-row,.budget-rule-row{border:1px solid rgba(26,26,26,.08);border-radius:var(--admin-radius);box-shadow:0 12px 30px rgba(26,26,26,.055);background:#fff}
 .modal-overlay{background:rgba(0,0,0,.58);backdrop-filter:blur(8px)}
 .modal-content,.crop-panel{border-radius:18px;box-shadow:0 30px 88px rgba(0,0,0,.28);overscroll-behavior:contain}
@@ -332,7 +336,7 @@ body{background:var(--admin-paper)}
 .modal-header{position:sticky;top:0;z-index:2;padding:16px!important;background:#fff}
 .modal-body{flex:1;overflow:auto;padding:16px 14px 22px!important}
 .modal-footer{position:sticky;bottom:0;z-index:2;padding:12px 14px calc(12px + env(safe-area-inset-bottom))!important;background:#fff!important}
-.form-row,.direction-select-row,.settings-contact-row{grid-template-columns:1fr!important}
+.form-row,.direction-select-row,.settings-contact-row,.faq-setting-row{grid-template-columns:1fr!important}
 .form-group input,.form-group textarea,.form-group select,.multi-select summary{min-height:48px!important;font-size:16px!important}
 .schedule-row{padding:12px!important;border-radius:16px!important;background:#fff!important}
 .schedule-row-top,.schedule-row-fields{grid-template-columns:1fr!important}
@@ -402,6 +406,9 @@ body{background:var(--admin-paper)}
 </button>
 <button class="nav-item" data-tab="budget">
 <i class="fas fa-hand-holding-heart"></i> Бюджетные места
+</button>
+<button class="nav-item" data-tab="faq">
+<i class="fas fa-circle-question"></i> FAQ
 </button>
 <button class="nav-item" data-tab="settings">
 <i class="fas fa-cog"></i> Настройки
@@ -527,6 +534,26 @@ body{background:var(--admin-paper)}
 </thead>
 <tbody></tbody>
 </table>
+</div>
+</div>
+
+
+<!-- FAQ -->
+<div class="tab-content" id="tab-faq">
+<div class="tab-header">
+<h1>FAQ</h1>
+<button class="btn btn-primary" id="add-faq-row-btn" type="button">
+<i class="fas fa-plus"></i> Добавить вопрос
+</button>
+</div>
+<div class="settings-card">
+<h3><i class="fas fa-circle-question"></i> Вопросы и ответы на главной</h3>
+<form id="faq-settings-form">
+<p style="color:var(--gray-500);font-size:14px;margin-bottom:14px">Порядок вопросов на главной странице меняется стрелками. Отключённые вопросы сохраняются в админке, но не отображаются на сайте.</p>
+<div id="faq-settings-list" class="settings-contacts-list"></div>
+<button type="submit" class="btn btn-primary" style="margin-top:20px"><i class="fas fa-save" aria-hidden="true"></i> Сохранить FAQ</button>
+<div id="faq-settings-message" style="margin-top:12px;font-size:14px;"></div>
+</form>
 </div>
 </div>
 
@@ -722,6 +749,6 @@ body{background:var(--admin-paper)}
 
 <div class="toast-container" id="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<script src="/admin/admin.js?v=20260518-png-direction-icons"></script>
+<script src="/admin/admin.js?v=20260520-faq-admin"></script>
 </body>
 </html>

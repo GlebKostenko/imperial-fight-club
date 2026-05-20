@@ -772,6 +772,7 @@ async function loadSiteSettings() {
     try {
         siteSettingsData = await apiGet('/api/settings');
         renderSiteSettingsForm();
+        renderFaqSettingsForm();
         renderLegalSettingsForm();
     } catch (e) {
         console.error(e);
@@ -1705,9 +1706,10 @@ window.updateContactStatus = async (id, status) => {
 window.deleteContact = async (id) => {
     if (!confirm('Удалить заявку?')) return;
     try {
-        await apiPut(`/api/directions/${id}`, { ...direction, schedule: [] });
-        showToast('Расписание очищено', 'success');
-        loadDirections();
+        await apiDelete(`/api/contacts/${id}`);
+        contactsData = contactsData.filter(contact => contact._id !== id);
+        renderContacts();
+        showToast('Заявка удалена', 'success');
     } catch {
         showToast('Ошибка удаления', 'error');
     }
@@ -1815,7 +1817,7 @@ const CONTACT_TYPE_PRESETS = {
 };
 
 window.moveSettingRow = (button, direction) => {
-    const row = button.closest('[data-contact-row]');
+    const row = button.closest('[data-contact-row], [data-faq-row]');
     if (!row) return;
     if (direction < 0 && row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
     if (direction > 0 && row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row);
@@ -1839,6 +1841,52 @@ function contactSettingRow(contact = {}, index = Date.now()) {
             <button type="button" class="remove-contact-setting" title="Удалить" aria-label="Удалить контакт" onclick="this.closest('[data-contact-row]').remove()"><i class="fas fa-trash" aria-hidden="true"></i></button>
         </div>
     </div>`;
+}
+
+function defaultFaqSettings() {
+    return [
+        { question: 'Что нужно взять с собой на первую тренировку?', answer: 'Достаточно взять спортивную форму, сменную обувь, а также полотенце и бутылку для воды. В зале есть дежурная экипировка — перчатки и шлемы, которую мы выдаём на каждом занятии, при желании тренер подробно проконсультирует вас и подскажет, какую именно экипировку и защиту лучше приобрести для дальнейших занятий.', order: 1, isActive: true },
+        { question: 'С какого возраста вы принимаете детей?', answer: 'Мы набираем детские группы начиная с 4 лет. Для малышей (4–6 лет) тренировки проходят в игровой форме с упором на общую физическую подготовку (ОФП), координацию и дисциплину. С 7 лет начинается более глубокое изучение базовой техники единоборств.', order: 2, isActive: true },
+        { question: 'Я никогда раньше не занимался. Меня сразу поставят в спарринг?', answer: 'Нет, это исключено. Все новички начинают с изучения базовой техники, стойки и перемещений. К парной отработке и спаррингам вы перейдете только тогда, когда будете технически и физически к этому готовы, и исключительно по вашему желанию.', order: 3, isActive: true },
+        { question: 'Есть ли в зале душевые и раздевалки?', answer: 'Да, зал полностью оборудован для тренировок. У нас есть мужские и женские раздевалки с индивидуальными шкафчиками и современные душевыми кабинами. Вы сможете спокойно привести себя в порядок после занятия.', order: 4, isActive: true },
+        { question: 'Предусмотрены ли у вас бюджетные (бесплатные) места?', answer: 'Да, мы поддерживаем развитие спорта и талантливых ребят. Бюджетные места предоставляются спортсменам, которые показывают высокие результаты, регулярно выступают на соревнованиях городского и регионального уровня, защищая честь клуба. Условия получения бюджетного места указаны на странице \\ref{Бюджетные места}{/budget}', order: 5, isActive: true },
+        { question: 'Как часто нужно тренироваться, чтобы увидеть результат?', answer: 'Для поддержания формы и освоения базы новичкам оптимально посещать зал 2–3 раза в неделю. Это дает мышцам время на восстановление, а нервной системе — на усвоение новых паттернов движений.', order: 6, isActive: true },
+        { question: 'Как записаться на первое занятие?', answer: 'Просто оставьте заявку в форме ниже. Наш администратор свяжется с вами, подберет удобное время, группу вашего уровня подготовки и ответит на оставшиеся вопросы.', order: 7, isActive: true },
+    ];
+}
+
+function faqSettingRow(item = {}) {
+    return `<div class="settings-contact-row faq-setting-row" data-faq-row>
+        <div class="form-group"><label>Вопрос</label><input class="faq-setting-question" value="${escapeAttr(item.question || '')}" placeholder="Например: Можно ли прийти на пробную тренировку?"></div>
+        <div class="form-group"><label>Ответ</label><textarea class="faq-setting-answer" placeholder="Короткий ответ для главной страницы">${escapeAttr(item.answer || '')}</textarea><div class="hint">Ссылка в ответе: \\ref{Мой текст}{https://comdity.ru} или \\ref{Бюджетные места}{/budget}</div></div>
+        <label class="faq-active-control"><input class="faq-setting-active" type="checkbox" ${item.isActive === false ? '' : 'checked'}> Показывать</label>
+        <div class="setting-row-actions">
+            <button type="button" class="setting-row-action" title="Выше" aria-label="Поднять вопрос выше" onclick="moveSettingRow(this,-1)"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+            <button type="button" class="setting-row-action" title="Ниже" aria-label="Опустить вопрос ниже" onclick="moveSettingRow(this,1)"><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
+            <button type="button" class="remove-contact-setting" title="Удалить" aria-label="Удалить вопрос" onclick="this.closest('[data-faq-row]').remove()"><i class="fas fa-trash" aria-hidden="true"></i></button>
+        </div>
+    </div>`;
+}
+
+function renderFaqSettingsForm() {
+    const list = document.getElementById('faq-settings-list');
+    if (!list) return;
+    const source = Array.isArray(siteSettingsData.faq) ? siteSettingsData.faq : defaultFaqSettings();
+    const items = [...source].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+    list.innerHTML = items.map(faqSettingRow).join('') || faqSettingRow({});
+}
+
+function collectFaqSettings() {
+    const items = [...document.querySelectorAll('#faq-settings-list [data-faq-row]')].map((row, index) => ({
+        question: row.querySelector('.faq-setting-question')?.value.trim() || '',
+        answer: row.querySelector('.faq-setting-answer')?.value.trim() || '',
+        order: index + 1,
+        isActive: !!row.querySelector('.faq-setting-active')?.checked,
+    })).filter(item => item.question || item.answer);
+    return {
+        ...(siteSettingsData || {}),
+        faq: items,
+    };
 }
 
 function setupContactTypeAutofill(row) {
@@ -1896,6 +1944,7 @@ function collectSiteSettings() {
         contactText: form.elements.contactText.value.trim(),
         contacts,
         socials,
+        faq: siteSettingsData.faq || [],
         budget: siteSettingsData.budget || {},
         legal: siteSettingsData.legal || {},
     };
@@ -1919,6 +1968,14 @@ document.getElementById('add-social-setting-btn')?.addEventListener('click', () 
     setupContactTypeAutofill(row);
 });
 
+document.getElementById('add-faq-row-btn')?.addEventListener('click', () => {
+    const list = document.getElementById('faq-settings-list');
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = faqSettingRow({ isActive: true }).trim();
+    list.appendChild(wrapper.firstElementChild);
+    list.lastElementChild?.querySelector('.faq-setting-question')?.focus();
+});
+
 document.getElementById('site-settings-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg = document.getElementById('site-settings-message');
@@ -1928,6 +1985,20 @@ document.getElementById('site-settings-form')?.addEventListener('submit', async 
         msg.style.color = 'var(--green)';
     } catch (err) {
         msg.textContent = 'Ошибка сохранения настроек';
+        msg.style.color = 'var(--red)';
+    }
+});
+
+document.getElementById('faq-settings-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('faq-settings-message');
+    try {
+        siteSettingsData = await apiPut('/api/settings', collectFaqSettings()).then(r => r.settings || r);
+        renderFaqSettingsForm();
+        msg.textContent = 'FAQ сохранён';
+        msg.style.color = 'var(--green)';
+    } catch (err) {
+        msg.textContent = 'Ошибка сохранения FAQ';
         msg.style.color = 'var(--red)';
     }
 });
