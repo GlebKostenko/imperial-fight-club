@@ -67,18 +67,20 @@ function parseTimeRange(slot = {}) {
     return { start: match ? match[1].padStart(5, '0') : '', end: match ? match[2].padStart(5, '0') : '' };
 }
 
-function updateDaysSummary(details) {
-    const checked = [...details.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
-    const summary = details.querySelector('.days-summary');
-    summary.textContent = checked.length ? checked.join(', ') : 'Выберите дни';
+function updateMultiSelectSummary(details) {
+    const summary = details.querySelector('[data-multi-summary]');
+    if (!summary) return;
+    const checked = [...details.querySelectorAll('input[type="checkbox"]:checked')];
+    const values = checked.map(cb => cb.dataset.summary || cb.value).filter(Boolean);
+    summary.textContent = values.length ? values.join(' · ') : (summary.dataset.placeholder || 'Выберите');
 }
 
 function setupDaysDropdowns(scope = document) {
     const dropdowns = scope.matches?.('.multi-select') ? [scope] : [...scope.querySelectorAll('.multi-select')];
     dropdowns.forEach(details => {
-        updateDaysSummary(details);
+        updateMultiSelectSummary(details);
         details.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', () => updateDaysSummary(details));
+            cb.addEventListener('change', () => updateMultiSelectSummary(details));
             cb.addEventListener('click', event => event.stopPropagation());
         });
     });
@@ -255,13 +257,17 @@ window.moveEntityOrder = async (type, id, direction) => {
     }
 };
 
+function orderControlHtml(type, item = {}) {
+    return `<div class="order-control">
+        <button class="btn btn-sm btn-secondary" title="Выше" aria-label="Поднять выше" onclick="moveEntityOrder('${type}','${item._id}',-1)"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+        <button class="btn btn-sm btn-secondary" title="Ниже" aria-label="Опустить ниже" onclick="moveEntityOrder('${type}','${item._id}',1)"><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
+    </div>`;
+}
+
 function homeControlHtml(type, item = {}) {
     return `<div class="home-control">
         <label><input type="checkbox" ${isShownOnHome(item) ? 'checked' : ''} onchange="toggleHomeEntity('${type}','${item._id}',this.checked)"> На главной</label>
-        <div class="order-control">
-            <button class="btn btn-sm btn-secondary" title="Выше" aria-label="Поднять выше" onclick="moveEntityOrder('${type}','${item._id}',-1)"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
-            <button class="btn btn-sm btn-secondary" title="Ниже" aria-label="Опустить ниже" onclick="moveEntityOrder('${type}','${item._id}',1)"><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
-        </div>
+        ${orderControlHtml(type, item)}
     </div>`;
 }
 
@@ -328,13 +334,21 @@ function trainerSocialOptions(selected = '') {
         .join('');
 }
 
-function trainerOptions(selectedName = '') {
-    const current = String(selectedName || '').trim();
-    let html = '<option value="">Выберите тренера</option>';
+function normalizeSlotTrainers(slot = {}) {
+    const raw = Array.isArray(slot.trainers) && slot.trainers.length
+        ? slot.trainers
+        : String(slot.trainer || '').split(/\s*[·•]\s*|,\s*|;\s*/);
+    return raw
+        .map(name => String(name || '').trim())
+        .filter(name => name && name !== 'Тренер клуба' && name !== 'Уточняйте у администратора' && name !== 'Тренер уточняется')
+        .filter((name, index, arr) => arr.indexOf(name) === index);
+}
+
+function trainerCheckboxes(selectedNames = []) {
+    const selected = new Set(selectedNames.map(name => String(name || '').trim()).filter(Boolean));
     const names = trainersData.map(t => t.name).filter(Boolean);
-    if (current && !names.includes(current)) names.unshift(current);
-    html += names.map(name => `<option value="${escapeAttr(name)}" ${name === current ? 'selected' : ''}>${escapeAttr(name)}</option>`).join('');
-    return html;
+    selected.forEach(name => { if (!names.includes(name)) names.unshift(name); });
+    return names.map(name => `<label><input type="checkbox" class="sch-trainer-check" value="${escapeAttr(name)}" data-summary="${escapeAttr(name)}" ${selected.has(name) ? 'checked' : ''}> ${escapeAttr(name)}</label>`).join('');
 }
 
 function slugify(value = '') {
@@ -806,7 +820,7 @@ function renderSports() {
             <td><div class="direction-name-cell"><span class="direction-table-icon">${directionIconImagePreview(directionIconImageValue(d), 'direction-icon-image-preview direction-icon-image-preview-table')}</span><div><strong>${escapeAttr(d.name || '')}</strong><br><small style="color:var(--gray-400)">${escapeAttr(d.shortDescription || '')}</small></div></div></td>
             <td><code>${escapeAttr(d.slug || '')}</code></td>
             <td><span class="color-pill"><span class="color-dot" style="background:${escapeAttr(directionColor(d))}"></span>${escapeAttr(directionColor(d))}</span></td>
-            <td>${homeControlHtml('directions', d)}</td>
+            <td>${orderControlHtml('directions', d)}</td>
             <td>${escapeAttr(d.description || '')}</td>
             <td>
                 <button class="btn btn-sm btn-secondary" aria-label="Редактировать направление ${escapeAttr(d.name || '')}" onclick="editSport('${d._id}')"><i class="fas fa-edit" aria-hidden="true"></i></button>
@@ -832,7 +846,10 @@ function renderDirections() {
         return `
         <tr>
             <td><strong>${escapeAttr(d.name || '')}</strong><br><small style="color:var(--gray-400)">${escapeAttr(d.slug || '')}</small></td>
-            <td>${(d.schedule || []).map(s => `${escapeAttr(s.day || '')}: ${escapeAttr(s.time || '')}${s.trainer ? ' · ' + escapeAttr(s.trainer) : ''}${s.group ? ' · ' + escapeAttr(GROUP_LABELS[s.group === 'kids' ? 'beginners' : s.group] || s.group) : ''}${(s.age || s.group === 'kids') ? ' · ' + escapeAttr(AGE_LABELS[s.age || 'kids'] || s.age) : ''}`).join('<br>')}</td>
+            <td>${(d.schedule || []).map(s => {
+                const trainerLabel = normalizeSlotTrainers(s).join(' · ') || 'Тренер клуба';
+                return `${escapeAttr(s.day || '')}: ${escapeAttr(s.time || '')} · ${escapeAttr(trainerLabel)}${s.group ? ' · ' + escapeAttr(GROUP_LABELS[s.group === 'kids' ? 'beginners' : s.group] || s.group) : ''}${(s.age || s.group === 'kids') ? ' · ' + escapeAttr(AGE_LABELS[s.age || 'kids'] || s.age) : ''}`;
+            }).join('<br>')}</td>
             <td>${audiences}<br><small style="color:var(--gray-400)">Возраст: ${ages}</small></td>
             <td>
                 <button class="btn btn-sm btn-secondary" aria-label="Редактировать расписание ${escapeAttr(d.name || '')}" onclick="editDirection('${d._id}')"><i class="fas fa-edit" aria-hidden="true"></i></button>
@@ -1163,10 +1180,6 @@ function getSportForm(direction = null) {
                 <label>Порядок</label>
                 <input type="number" name="order" value="${direction?.order || directionsData.length + 1}">
             </div>
-            <div class="form-group checkbox-line">
-                <label><input type="checkbox" name="showOnHome" ${direction?.showOnHome || direction?.isFeaturedHome ? 'checked' : ''}> Показывать в популярных направлениях на главной</label>
-                <div class="hint">Если не отмечено ни одного направления, на главной будут показаны первые три активных направления.</div>
-            </div>
             <div class="form-group">
                 <label>Тренеров на карточке главной</label>
                 <input type="number" name="homeTrainerLimit" min="0" max="20" value="${Number(direction?.homeTrainerLimit ?? direction?.trainerLimit ?? 4)}">
@@ -1202,8 +1215,8 @@ function setupSportForm() {
             name: form.name.value,
             slug: form.slug.value,
             color: form.color.value,
-            showOnHome: !!form.showOnHome?.checked,
-            isFeaturedHome: !!form.showOnHome?.checked,
+            showOnHome: true,
+            isFeaturedHome: true,
             shortDescription: form.shortDescription.value,
             description: form.description.value,
             homeTrainerLimit: Math.max(0, parseInt(form.homeTrainerLimit.value, 10) || 0),
@@ -1253,15 +1266,16 @@ window.deleteSport = async (id) => {
 function scheduleRowHtml(s = {}, i = 0) {
     const selectedDays = normalizeScheduleDays(s.day || '');
     const { start, end } = parseTimeRange(s);
+    const selectedTrainers = normalizeSlotTrainers(s);
     const dayCheckboxes = WEEK_DAYS.map(([shortName, fullName]) => `
-        <label><input type="checkbox" class="sch-day-check" value="${shortName}" ${selectedDays.includes(shortName) ? 'checked' : ''}> ${fullName}</label>`).join('');
+        <label><input type="checkbox" class="sch-day-check" value="${shortName}" data-summary="${shortName}" ${selectedDays.includes(shortName) ? 'checked' : ''}> ${fullName}</label>`).join('');
     return `
         <div class="schedule-row" data-index="${i}">
             <div class="schedule-row-top">
                 <div class="schedule-row-field">
                     <label>Дни недели</label>
                     <details class="multi-select sch-days">
-                        <summary><span class="days-summary">Выберите дни</span></summary>
+                        <summary><span class="days-summary" data-multi-summary data-placeholder="Выберите дни">Выберите дни</span></summary>
                         <div class="multi-options">${dayCheckboxes}</div>
                     </details>
                 </div>
@@ -1277,7 +1291,10 @@ function scheduleRowHtml(s = {}, i = 0) {
             <div class="schedule-row-fields">
                 <div class="schedule-row-field">
                     <label>Тренер</label>
-                    <select class="sch-trainer trainer-select">${trainerOptions(s.trainer || '')}</select>
+                    <details class="multi-select sch-trainers">
+                        <summary><span class="trainers-summary" data-multi-summary data-placeholder="Тренер клуба">Тренер клуба</span></summary>
+                        <div class="multi-options">${trainerCheckboxes(selectedTrainers)}</div>
+                    </details>
                 </div>
                 <div class="schedule-row-field">
                     <label>Уровень</label>
@@ -1355,13 +1372,14 @@ function collectScheduleRows(form) {
         const days = [...row.querySelectorAll('.sch-day-check:checked')].map(cb => cb.value);
         const startTime = row.querySelector('.sch-time-start')?.value || '';
         const endTime = row.querySelector('.sch-time-end')?.value || '';
-        const trainer = row.querySelector('.sch-trainer')?.value || '';
+        const trainers = [...row.querySelectorAll('.sch-trainer-check:checked')].map(cb => cb.value).filter(Boolean);
+        const trainer = trainers.join(' · ');
         const group = row.querySelector('.sch-group')?.value || 'beginners';
         const audience = row.querySelector('.sch-audience')?.value || 'all';
         const age = row.querySelector('.sch-age')?.value || 'all';
         if (days.length && startTime && endTime) {
             if (endTime <= startTime) hasInvalidTime = true;
-            schedule.push({ day: days.join(', '), startTime, endTime, time: `${startTime} — ${endTime}`, trainer, group, age, audience });
+            schedule.push({ day: days.join(', '), startTime, endTime, time: `${startTime} — ${endTime}`, trainer, trainers, group, age, audience });
         }
     });
     return { schedule, hasInvalidTime };

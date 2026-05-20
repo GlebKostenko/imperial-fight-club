@@ -5803,6 +5803,231 @@
       box-shadow: 0 0 0 4px rgba(255, 212, 0, .18);
     }
 
+    .contact-time-options {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .contact-time-option {
+      min-height: 48px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      padding: 0 10px;
+      border: 1px solid rgba(17, 17, 17, .12);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 250, 240, .92));
+      color: rgba(17, 17, 17, .78);
+      font-size: 14px;
+      font-weight: 780;
+      line-height: 1.15;
+      text-align: center;
+      cursor: pointer;
+      transition:
+        border-color 180ms var(--premium-ease-standard),
+        background-color 180ms var(--premium-ease-standard),
+        color 180ms var(--premium-ease-standard),
+        box-shadow 220ms var(--premium-ease),
+        transform 220ms var(--premium-ease);
+    }
+
+    .contact-time-option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .contact-time-option:has(input:checked) {
+      border-color: rgba(17, 17, 17, .24);
+      background: linear-gradient(180deg, #1d1a16, #080807);
+      color: #fff !important;
+      box-shadow: 0 12px 24px rgba(17, 17, 17, .12);
+    }
+
+    .contact-time-option:has(input:checked) span {
+      color: #fff !important;
+      opacity: 1;
+    }
+
+    .contact-time-option:focus-within {
+      border-color: var(--premium-yellow);
+      box-shadow: 0 0 0 4px rgba(255, 212, 0, .18);
+    }
+
+    body.contact-direction-sheet-open {
+      overflow: hidden;
+    }
+
+    .contact-direction-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1140;
+      background: rgba(17, 17, 17, .38);
+      backdrop-filter: blur(7px);
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transition: opacity 240ms var(--premium-ease-standard), visibility 240ms var(--premium-ease-standard);
+    }
+
+    .contact-direction-sheet {
+      position: fixed;
+      right: max(12px, env(safe-area-inset-right));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      left: max(12px, env(safe-area-inset-left));
+      z-index: 1150;
+      max-height: min(78svh, 560px);
+      overflow: hidden;
+      padding: 10px 14px 14px;
+      border: 1px solid rgba(17, 17, 17, .12);
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(255, 252, 244, .99), rgba(255, 248, 230, .98));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .78),
+        0 24px 70px rgba(17, 17, 17, .28);
+      opacity: 0;
+      transform: translateY(105%);
+      pointer-events: none;
+      visibility: hidden;
+      transition:
+        opacity 240ms var(--premium-ease-standard),
+        transform 300ms var(--premium-ease),
+        visibility 240ms var(--premium-ease-standard);
+    }
+
+    .contact-direction-sheet.active,
+    .contact-direction-sheet-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+    }
+
+    .contact-direction-sheet.active {
+      transform: translateY(0);
+    }
+
+    .contact-direction-sheet-handle {
+      width: 42px;
+      height: 4px;
+      margin: 0 auto 14px;
+      border-radius: 999px;
+      background: rgba(17, 17, 17, .18);
+    }
+
+    .contact-direction-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(17, 17, 17, .09);
+    }
+
+    .contact-direction-sheet-head h2 {
+      margin: 0;
+      color: var(--premium-ink);
+      font-family: var(--display-font);
+      font-size: 28px;
+      line-height: .95;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .contact-direction-sheet-close {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid rgba(17, 17, 17, .12);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--premium-ink);
+      cursor: pointer;
+    }
+
+    .contact-direction-sheet-list {
+      max-height: min(56svh, 390px);
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding: 14px 0 2px;
+    }
+
+    .contact-direction-sheet-option {
+      width: 100%;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 14px;
+      border: 1px solid rgba(17, 17, 17, .1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .72);
+      color: rgba(17, 17, 17, .78);
+      font: inherit;
+      font-weight: 760;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .contact-direction-sheet-option span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .contact-direction-sheet-option i {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(17, 17, 17, .08);
+      color: transparent;
+    }
+
+    .contact-direction-sheet-option.active {
+      border-color: rgba(17, 17, 17, .24);
+      background: var(--premium-ink);
+      color: #fff;
+    }
+
+    .contact-direction-sheet-option.active i {
+      background: var(--premium-yellow);
+      color: var(--premium-ink);
+    }
+
+    @media(max-width:720px) {
+      .field--premium-select.is-open {
+        z-index: 3;
+      }
+
+      .premium-direction-select.is-open .premium-direction-menu {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-6px) scale(.985);
+      }
+
+      .contact-time-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media(min-width:721px) {
+      .contact-direction-sheet,
+      .contact-direction-sheet-backdrop {
+        display: none !important;
+      }
+    }
+
     .contact-item p {
       color: rgba(17, 17, 17, .86) !important;
       font-weight: 640 !important;
@@ -6008,6 +6233,10 @@
 
     .filter-btn {
       min-height: 40px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 7px !important;
       padding: 0 14px !important;
       border-radius: 7px !important;
       font-size: 14px !important;
@@ -6024,6 +6253,16 @@
       border-color: var(--premium-ink) !important;
       color: #fff !important;
       box-shadow: 0 12px 24px rgba(17, 17, 17, .12) !important;
+    }
+
+    .filter-btn.active span,
+    .filter-btn.active strong {
+      color: inherit !important;
+    }
+
+    .filter-btn--mobile-quick,
+    .filter-more-btn {
+      display: none !important;
     }
 
     body.schedule-filter-sheet-open {
@@ -6334,14 +6573,53 @@
         min-height: 42px !important;
         padding: 0 13px !important;
         font-size: 13px !important;
+        line-height: 1 !important;
+        text-align: center !important;
       }
 
       #page-schedule .schedule-filters {
+        display: flex !important;
+      }
+
+      .filter-btn--desktop {
         display: none !important;
       }
 
+      .filter-btn--mobile-quick,
+      .filter-more-btn {
+        display: inline-flex !important;
+      }
+
+      .filter-more-btn {
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+      }
+
+      #page-schedule .schedule-filters,
+      #trainerFilters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+      }
+
+      #page-schedule .schedule-filters::-webkit-scrollbar,
+      #trainerFilters::-webkit-scrollbar {
+        display: none;
+      }
+
+      #page-schedule .schedule-filters .filter-btn,
+      #trainerFilters .filter-btn {
+        flex: 0 0 auto;
+      }
+
+      .filter-more-btn i {
+        font-size: 11px;
+      }
+
       .schedule-mobile-filter-trigger {
-        display: flex;
+        display: none !important;
       }
 
       .schedule-filter-sheet-backdrop.active {
@@ -6616,6 +6894,17 @@
         transform: none !important
       }
     }
+
+    /* Schedule cards must use the admin-selected direction color, even for custom slugs */
+    .timeline-session[style*="--session-accent"],
+    .mobile-session[style*="--session-accent"] {
+      border-left-color: var(--session-accent, var(--premium-yellow)) !important;
+      border-color: color-mix(in srgb, var(--session-accent, var(--premium-yellow)) 46%, rgba(17, 17, 17, .12)) !important;
+      background:
+        linear-gradient(135deg,
+          color-mix(in srgb, var(--session-accent, var(--premium-yellow)) 30%, #fff 70%),
+          color-mix(in srgb, var(--session-accent, var(--premium-yellow)) 10%, #fff 90%)) !important;
+    }
   </style>
 </head>
 
@@ -6843,7 +7132,7 @@
           <div class="section-head">
             <div>
               <div class="eyebrow">Секции</div>
-              <h2 class="section-title">Популярные направления</h2>
+              <h2 class="section-title">Направления</h2>
             </div><a class="btn btn-outline" href="/schedule" data-page="schedule" data-schedule-filter="all">Все занятия</a>
           </div>
           <div class="grid grid-3" id="home-directions"></div>
@@ -6901,12 +7190,14 @@
               <div class="field"><label>Направление</label><select name="direction" class="direction-select" required>
                   <option value="">Выберите направление</option>
                 </select></div>
-              <div class="field"><label>Удобное время</label><select name="time" class="time-select">
-                  <option value="">Любое</option>
-                  <option value="morning">Утро</option>
-                  <option value="day">День</option>
-                  <option value="evening">Вечер</option>
-                </select></div>
+              <div class="field"><label>Удобное время</label>
+                <div class="contact-time-options" role="radiogroup" aria-label="Удобное время">
+                  <label class="contact-time-option"><input type="radio" name="time" value="" checked><span>Любое</span></label>
+                  <label class="contact-time-option"><input type="radio" name="time" value="morning"><span>Утро</span></label>
+                  <label class="contact-time-option"><input type="radio" name="time" value="day"><span>День</span></label>
+                  <label class="contact-time-option"><input type="radio" name="time" value="evening"><span>Вечер</span></label>
+                </div>
+              </div>
               <div class="field"><label>Комментарий</label><textarea name="message"
                   placeholder="Опыт, цель или вопрос"></textarea></div><button class="btn btn-primary"
                 style="width:100%" type="submit">Отправить заявку</button>
@@ -6970,6 +7261,22 @@
             </div>
           </div>
           <div class="filters" id="trainerFilters"><button class="filter-btn active" data-filter="all">Все</button>
+          </div>
+          <div class="schedule-filter-sheet-backdrop trainer-filter-sheet-backdrop" data-trainer-filter-close
+            aria-hidden="true"></div>
+          <div class="schedule-filter-sheet trainer-filter-sheet" id="trainerFilterSheet" role="dialog"
+            aria-modal="true" aria-labelledby="trainerFilterSheetTitle" aria-hidden="true">
+            <div class="schedule-filter-sheet-handle" aria-hidden="true"></div>
+            <div class="schedule-filter-sheet-head">
+              <div>
+                <div class="eyebrow">Фильтр</div>
+                <h2 id="trainerFilterSheetTitle">Направление</h2>
+              </div>
+              <button class="schedule-filter-sheet-close" type="button" data-trainer-filter-close
+                aria-label="Закрыть фильтр"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <div class="schedule-filter-sheet-list" data-trainer-filter-sheet-list role="listbox"
+              aria-label="Направление тренера"></div>
           </div>
           <div class="grid grid-3" id="trainers-grid"></div>
         </div>
@@ -7049,12 +7356,14 @@
               <div class="field"><label>Направление</label><select name="direction" class="direction-select" required>
                   <option value="">Выберите направление</option>
                 </select></div>
-              <div class="field"><label>Удобное время</label><select name="time" class="time-select">
-                  <option value="">Любое</option>
-                  <option value="morning">Утро</option>
-                  <option value="day">День</option>
-                  <option value="evening">Вечер</option>
-                </select></div>
+              <div class="field"><label>Удобное время</label>
+                <div class="contact-time-options" role="radiogroup" aria-label="Удобное время">
+                  <label class="contact-time-option"><input type="radio" name="time" value="" checked><span>Любое</span></label>
+                  <label class="contact-time-option"><input type="radio" name="time" value="morning"><span>Утро</span></label>
+                  <label class="contact-time-option"><input type="radio" name="time" value="day"><span>День</span></label>
+                  <label class="contact-time-option"><input type="radio" name="time" value="evening"><span>Вечер</span></label>
+                </div>
+              </div>
               <div class="field"><label>Комментарий</label><textarea name="message"
                   placeholder="Опыт, цель или вопрос"></textarea></div><button class="btn btn-primary"
                 style="width:100%" type="submit">Отправить заявку</button>
