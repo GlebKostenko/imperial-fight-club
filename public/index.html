@@ -1786,6 +1786,248 @@
       color: #fff
     }
 
+    .trainer-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 14px !important;
+      overflow: hidden;
+      border-color: rgba(17, 17, 17, .08) !important;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 252, 239, .9)),
+        #fff !important;
+    }
+
+    .trainer-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: linear-gradient(90deg, var(--premium-yellow), rgba(112, 183, 255, .85));
+      opacity: .92;
+    }
+
+    .trainer-card .trainer-photo {
+      margin: 0;
+      border-radius: 12px !important;
+      background:
+        radial-gradient(circle at 25% 20%, rgba(255, 212, 0, .32), transparent 34%),
+        linear-gradient(135deg, #f4f4f4, #d9dee5);
+      color: rgba(17, 17, 17, .26);
+    }
+
+    .trainer-card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 16px 2px 2px;
+    }
+
+    .trainer-specialties {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      width: 100%;
+    }
+
+    .trainer-specialty {
+      --trainer-specialty-color: var(--premium-yellow);
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      max-width: 100%;
+      padding: 7px 10px;
+      border: 1px solid color-mix(in srgb, var(--trainer-specialty-color) 46%, rgba(17, 17, 17, .16));
+      border-radius: 9px;
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--trainer-specialty-color) 18%, #fff 82%),
+          color-mix(in srgb, var(--trainer-specialty-color) 9%, #fff 91%));
+      color: #171717;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .trainer-specialty-dot {
+      flex: 0 0 9px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--trainer-specialty-color);
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--trainer-specialty-color) 18%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, .48);
+    }
+
+    .trainer-card-name {
+      margin: 0 !important;
+      font-size: clamp(20px, 2vw, 24px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .trainer-experience {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: rgba(17, 17, 17, .68);
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .trainer-experience i {
+      color: #9a7800;
+      font-size: 13px;
+    }
+
+    .trainer-card .trainer-social-link {
+      --trainer-social-brand: var(--premium-ink);
+      --trainer-social-brand-hover: #000;
+      --trainer-social-soft: rgba(17, 17, 17, .08);
+      --trainer-social-on-brand: #fff;
+      width: 100%;
+      min-height: 42px;
+      justify-content: space-between;
+      margin: auto 0 0;
+      padding: 8px 12px 8px 8px;
+      border-radius: 9px;
+      border: 1px solid color-mix(in srgb, var(--trainer-social-brand) 20%, transparent);
+      background: var(--trainer-social-soft);
+      color: var(--trainer-social-brand);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72), 0 10px 22px rgba(17, 17, 17, .05);
+    }
+
+    .trainer-card .trainer-social-label {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .trainer-card .trainer-social-link i {
+      flex: 0 0 auto;
+      color: currentColor;
+    }
+
+    .trainer-card .trainer-social-mark {
+      flex: 0 0 30px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--trainer-social-brand);
+      color: var(--trainer-social-on-brand);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
+    }
+
+    .trainer-card .trainer-social-mark i {
+      color: currentColor !important;
+      font-size: 14px;
+    }
+
+    .trainer-card .trainer-social-mark svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .trainer-card .trainer-social-link.trainer-social-link--telegram {
+      --trainer-social-brand: #229ed9;
+      --trainer-social-brand-hover: #1688bd;
+      --trainer-social-soft: rgba(34, 158, 217, .12);
+      --trainer-social-on-brand: #fff;
+    }
+
+    .trainer-card .trainer-social-link.trainer-social-link--whatsapp {
+      --trainer-social-brand: #25d366;
+      --trainer-social-brand-hover: #128c7e;
+      --trainer-social-soft: rgba(37, 211, 102, .13);
+      --trainer-social-on-brand: #fff;
+    }
+
+    .trainer-card .trainer-social-link.trainer-social-link--instagram {
+      --trainer-social-brand: #dd2a7b;
+      --trainer-social-brand-hover: #c13584;
+      --trainer-social-soft: rgba(221, 42, 123, .12);
+      --trainer-social-on-brand: #fff;
+    }
+
+    .trainer-card .trainer-social-link.trainer-social-link--tiktok {
+      --trainer-social-brand: #111111;
+      --trainer-social-brand-hover: #000;
+      --trainer-social-soft: rgba(0, 242, 234, .13);
+      --trainer-social-on-brand: #fff;
+    }
+
+    .trainer-card .trainer-social-link--tiktok .trainer-social-mark {
+      background:
+        linear-gradient(135deg, #25f4ee 0 32%, #111 32% 68%, #fe2c55 68% 100%);
+      color: #fff;
+    }
+
+    .trainer-card .trainer-social-link.trainer-social-link--vk {
+      --trainer-social-brand: #0077ff;
+      --trainer-social-brand-hover: #0069e0;
+      --trainer-social-soft: rgba(0, 119, 255, .12);
+      --trainer-social-on-brand: #fff;
+    }
+
+    .trainer-card .trainer-social-link.trainer-social-link--youtube {
+      --trainer-social-brand: #ff0000;
+      --trainer-social-brand-hover: #c70000;
+      --trainer-social-soft: rgba(255, 0, 0, .1);
+      --trainer-social-on-brand: #fff;
+    }
+
+    .trainer-card .trainer-social-link.trainer-social-link--max {
+      --trainer-social-brand: #007aff;
+      --trainer-social-brand-hover: #007aff;
+      --trainer-social-soft: rgba(0, 122, 255, .12);
+      --trainer-social-on-brand: #fff;
+    }
+
+    .trainer-card .trainer-social-link:hover,
+    .trainer-card .trainer-social-link:focus-visible {
+      border-color: color-mix(in srgb, var(--trainer-social-brand-hover) 52%, transparent);
+      background: var(--trainer-social-brand-hover);
+      color: var(--trainer-social-on-brand);
+      box-shadow: 0 14px 26px color-mix(in srgb, var(--trainer-social-brand-hover) 22%, transparent);
+    }
+
+    .trainer-card .trainer-achievements {
+      width: 100%;
+      margin: 2px 0 0;
+      padding: 0;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .trainer-card .trainer-achievements li {
+      position: relative;
+      padding-left: 16px;
+      color: rgba(17, 17, 17, .66);
+      font-size: 14px;
+      line-height: 1.42;
+    }
+
+    .trainer-card .trainer-achievements li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: .58em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--premium-yellow);
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, .16);
+    }
+
     .price-card-head {
       min-height: 142px;
       display: flex;

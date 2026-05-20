@@ -1190,10 +1190,6 @@ function getSportForm(direction = null) {
                 <label>Краткое описание</label>
                 <input type="text" name="shortDescription" value="${escapeAttr(direction?.shortDescription || '')}" required>
             </div>
-            <div class="form-group">
-                <label>Полное описание</label>
-                <textarea name="description" required>${escapeAttr(direction?.description || '')}</textarea>
-            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
                 <button type="submit" class="btn btn-primary">${isEdit ? 'Сохранить' : 'Добавить'}</button>
@@ -1219,7 +1215,7 @@ function setupSportForm() {
             showOnHome: true,
             isFeaturedHome: true,
             shortDescription: form.shortDescription.value,
-            description: form.description.value,
+            description: form.shortDescription.value,
             homeTrainerLimit: Math.max(0, parseInt(form.homeTrainerLimit.value, 10) || 0),
             schedule: existing?.schedule || [],
             isActive: true,

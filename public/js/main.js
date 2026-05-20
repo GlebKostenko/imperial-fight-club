@@ -555,7 +555,7 @@ function openTrainerCard(key) {
   if (!trainer) return;
   const modal = ensureTrainerModal();
   const content = $('.trainer-modal-content', modal);
-  content.innerHTML = trainerCard(trainer).replace('<h3>', '<h3 id="trainer-modal-title">');
+  content.innerHTML = trainerCard(trainer).replace('<h3 class="trainer-card-name">', '<h3 class="trainer-card-name" id="trainer-modal-title">');
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
@@ -676,6 +676,10 @@ function splitTrainerSpecialtyValue(value = '') {
 }
 
 function getTrainerSpecialties(t) {
+  return getTrainerSpecialtyLabels(t).join(' / ');
+}
+
+function getTrainerSpecialtyValues(t) {
   let values = [];
   if (Array.isArray(t.specializations) && t.specializations.length) {
     values = t.specializations;
@@ -690,13 +694,38 @@ function getTrainerSpecialties(t) {
   } else if (t.sport) {
     values = [t.sport];
   }
-  const labels = values
+  return values
     .flatMap(splitTrainerSpecialtyValue)
+    .map(value => String(value || '').trim())
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.findIndex(item => normalizeFilterText(item) === normalizeFilterText(value)) === index);
+}
+
+function getTrainerSpecialtyLabels(t) {
+  const labels = getTrainerSpecialtyValues(t)
     .map(getDirectionLabel)
     .map(value => String(value || '').trim())
     .filter(Boolean)
-    .filter((value, index, arr) => arr.findIndex(item => item.toLowerCase() === value.toLowerCase()) === index);
-  return labels.join(' / ');
+    .filter((value, index, arr) => arr.findIndex(item => normalizeFilterText(item) === normalizeFilterText(value)) === index);
+  return labels;
+}
+
+function trainerSpecialtyColor(value = '', label = '') {
+  const direction = state.directions.find(item => directionMatchesFilterValue(item, value) || directionMatchesFilterValue(item, label));
+  const color = String(direction?.color || direction?.accentColor || '#ffd400').trim();
+  return /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#ffd400';
+}
+
+function trainerSpecialtiesHtml(t = {}) {
+  const values = getTrainerSpecialtyValues(t);
+  if (!values.length) return '';
+  const items = values
+    .map(value => ({ value, label: getDirectionLabel(value) }))
+    .filter((item, index, arr) => item.label && arr.findIndex(other => normalizeFilterText(other.label) === normalizeFilterText(item.label)) === index);
+  return `<div class="trainer-specialties" aria-label="Направления тренера">${items.map(({ value, label }) => {
+    const color = trainerSpecialtyColor(value, label);
+    return `<span class="trainer-specialty" style="--trainer-specialty-color:${escapeHtml(color)}"><span class="trainer-specialty-dot" aria-hidden="true"></span>${escapeHtml(label)}</span>`;
+  }).join('')}</div>`;
 }
 
 function normalizeAchievements(value) {
@@ -705,7 +734,7 @@ function normalizeAchievements(value) {
 }
 function achievementsList(value) {
   const items = normalizeAchievements(value);
-  return items.length ? `<ul class="trainer-achievements">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : '';
+  return items.length ? `<ul class="trainer-achievements">${items.map(item => `<li><span>${escapeHtml(item)}</span></li>`).join('')}</ul>` : '';
 }
 
 function normalizeExternalUrl(value = '') {
@@ -719,6 +748,7 @@ function trainerSocial(t = {}) {
   const url = normalizeExternalUrl(t.socialUrl || social.url || t.socialLink || '');
   if (!url) return null;
   let label = String(t.socialLabel || social.label || '').trim();
+  const type = detectSocialType(t.socialType || social.type || social.platform || label || url);
   if (!label) {
     try {
       label = new URL(url).hostname.replace(/^www\./, '');
@@ -726,7 +756,25 @@ function trainerSocial(t = {}) {
       label = 'Соцсеть';
     }
   }
-  return { label, url };
+  return { label, url, type, iconHtml: trainerSocialIconHtml(type) };
+}
+
+function detectSocialType(value = '') {
+  const text = String(value || '').trim().toLowerCase();
+  if (/t\.me|telegram|телеграм/.test(text)) return 'telegram';
+  if (/wa\.me|whatsapp|ватсап|вотсап/.test(text)) return 'whatsapp';
+  if (/instagram|instagr\.am|инстаграм/.test(text)) return 'instagram';
+  if (/tiktok|tiktok\.com|тикток|тик-ток/.test(text)) return 'tiktok';
+  if (/vk\.com|vkontakte|вконтакте|\bvk\b/.test(text)) return 'vk';
+  if (/youtube|youtu\.be|ютуб/.test(text)) return 'youtube';
+  if (/max\.ru|max|макс/.test(text)) return 'max';
+  return 'default';
+}
+
+function trainerSocialIconHtml(type = 'default') {
+  if (type === 'max') return `<span class="trainer-social-mark trainer-social-mark--max">${maxLogoMarkHtml('max-logo-mark')}</span>`;
+  const icon = SOCIAL_ICON_CLASSES[type] || 'fas fa-link';
+  return `<span class="trainer-social-mark"><i class="${escapeHtml(icon)}" aria-hidden="true"></i></span>`;
 }
 
 function getHomeAchievements(t = {}) {
@@ -735,16 +783,17 @@ function getHomeAchievements(t = {}) {
 
 function trainerCard(t, compact = false) {
   const photo = t.photo ? `<img src="${API_URL}${escapeHtml(t.photo)}" width="600" height="400" loading="lazy" decoding="async" alt="${escapeHtml(t.name)}">` : '<i class="fas fa-user" aria-hidden="true"></i>';
-  const specialties = getTrainerSpecialties(t);
   const homeAchievements = getHomeAchievements(t);
   const social = trainerSocial(t);
-  return `<article class="card" data-trainer-card="${escapeHtml(trainerKey(t))}">
+  return `<article class="card trainer-card" data-trainer-card="${escapeHtml(trainerKey(t))}">
     <div class="trainer-photo">${photo}</div>
-    <h3>${escapeHtml(t.name)}</h3>
-    <p><strong>${escapeHtml(specialties)}</strong>${t.experience ? ` · ${escapeHtml(t.experience)}` : ''}</p>
-    ${social ? `<a class="trainer-social-link" href="${escapeHtml(social.url)}" target="_blank" rel="noopener noreferrer"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i><span>${escapeHtml(social.label)}</span></a>` : ''}
+    <div class="trainer-card-body">
+    ${trainerSpecialtiesHtml(t)}
+    <h3 class="trainer-card-name">${escapeHtml(t.name)}</h3>
+    ${t.experience ? `<div class="trainer-experience"><i class="fas fa-medal" aria-hidden="true"></i><span>${escapeHtml(t.experience)}</span></div>` : ''}
     ${compact ? achievementsList(homeAchievements) : achievementsList(t.achievements)}
-    ${!compact && t.quote ? `<p style="margin-top:10px"><em>«${escapeHtml(t.quote)}»</em></p>` : ''}
+    ${social ? `<a class="trainer-social-link trainer-social-link--${escapeHtml(social.type)}" href="${escapeHtml(social.url)}" target="_blank" rel="noopener noreferrer">${social.iconHtml}<span class="trainer-social-label">${escapeHtml(social.label)}</span><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></a>` : ''}
+    </div>
   </article>`;
 }
 
@@ -1134,6 +1183,7 @@ function isSocialContact(item = {}) {
 const SOCIAL_ICON_CLASSES = {
   telegram: 'fab fa-telegram',
   instagram: 'fab fa-instagram',
+  tiktok: 'fab fa-tiktok',
   whatsapp: 'fab fa-whatsapp',
   vk: 'fab fa-vk',
   youtube: 'fab fa-youtube'
