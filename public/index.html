@@ -5334,6 +5334,24 @@
       transition: transform 520ms var(--premium-ease);
     }
 
+    /* Исправление обрезки фото тренеров на мобильных устройствах (iOS/Safari fix) */
+    .trainer-card .trainer-photo {
+      flex: 0 0 auto !important;
+      width: 100%;
+      position: relative !important;
+      display: block !important; /* Отключаем grid, который не дает картинке растянуться */
+    }
+
+    .trainer-card .trainer-photo img {
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      object-position: center top;
+    }
+
     .price-card.popular {
       border-color: var(--premium-yellow) !important;
       box-shadow: 0 28px 70px rgba(255, 212, 0, .18) !important;
@@ -7271,7 +7289,7 @@
               <div class="contact-list" data-contact-list></div>
               <div class="map"><iframe
                   src="https://yandex.ru/map-widget/v1/?ll=39.099703%2C45.011389&z=16&pt=39.099703%2C45.011389%2Cpm2rdm"
-                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="lazy"
+                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="eager"
                   referrerpolicy="no-referrer-when-downgrade"></iframe></div>
             </div>
             <form class="form contact-form">
@@ -7398,7 +7416,7 @@
               <div class="contact-list" data-contact-list></div>
               <div class="map"><iframe
                   src="https://yandex.ru/map-widget/v1/?ll=39.099703%2C45.011389&z=16&pt=39.099703%2C45.011389%2Cpm2rdm"
-                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="lazy"
+                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="eager"
                   referrerpolicy="no-referrer-when-downgrade"></iframe></div>
             </div>
             <form class="form contact-form">

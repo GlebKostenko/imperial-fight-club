@@ -173,16 +173,30 @@ function resolvePageName() {
   return LEGACY_PAGE_MAP[pathPage] || 'home';
 }
 
+function setWindowScrollTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
+function resetPageScrollToTop() {
+  setWindowScrollTop();
+  requestAnimationFrame(() => {
+    setWindowScrollTop();
+    requestAnimationFrame(setWindowScrollTop);
+  });
+}
+
 function openPage(name, push = true, pathOverride = '') {
   const pageName = VALID_PAGES.includes(name) ? name : 'home';
   $$('.page').forEach(page => page.classList.toggle('active', page.id === `page-${pageName}`));
   $$('[data-page]').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
-  closeDrawer();
-  window.scrollTo({ top: 0, behavior: scrollBehavior() });
+  closeDrawer({ restoreScroll: false });
   staggerActivePage(pageName);
 
   const nextPath = pathOverride || PAGE_PATHS[pageName] || '/';
   if (push && `${location.pathname}${location.search}` !== nextPath) history.pushState({ page: pageName }, '', nextPath);
+  resetPageScrollToTop();
 }
 
 
@@ -220,8 +234,6 @@ function bindNavigation() {
     const filterPath = link.dataset.trainerFilter || link.dataset.scheduleFilter ? link.getAttribute('href') : '';
     openPage(link.dataset.page, true, filterPath && filterPath.startsWith('/') ? filterPath : '');
     applyUrlFiltersForPage(link.dataset.page);
-    closeScheduleFilterSheet({ restoreFocus: false });
-    closeTrainerFilterSheet({ restoreFocus: false });
   });
 
   window.addEventListener('popstate', () => {
@@ -255,7 +267,7 @@ function toggleDrawer() {
   }
   openDrawer();
 }
-function closeDrawer() {
+function closeDrawer({ restoreScroll = true } = {}) {
   const drawer = $('#drawer');
   const wasOpen = drawer?.classList.contains('active') || drawer?.classList.contains('is-active');
   drawer?.classList.remove('active', 'is-active', 'is-dragging');
@@ -264,7 +276,7 @@ function closeDrawer() {
   drawer?.setAttribute('aria-hidden', 'true');
   $('#openDrawer')?.setAttribute('aria-expanded', 'false');
   $('#openDrawer')?.setAttribute('aria-label', 'Меню');
-  if (wasOpen) unlockBottomSheetScroll('drawer');
+  if (wasOpen) unlockBottomSheetScroll('drawer', { restoreScroll });
 }
 
 function setTrainerFilter(filter = 'all') {
@@ -367,7 +379,7 @@ function lockBottomSheetScroll(key = 'sheet') {
   bottomSheetLocks.add(key);
 }
 
-function unlockBottomSheetScroll(key = 'sheet') {
+function unlockBottomSheetScroll(key = 'sheet', { restoreScroll = true } = {}) {
   bottomSheetLocks.delete(key);
   if (bottomSheetLocks.size) return;
   const restoreY = bottomSheetScrollY;
@@ -384,7 +396,7 @@ function unlockBottomSheetScroll(key = 'sheet') {
   }
   bottomSheetRootStyles = null;
   bottomSheetBodyStyles = null;
-  window.scrollTo(0, restoreY);
+  if (restoreScroll) window.scrollTo(0, restoreY);
 }
 
 function placeBottomSheetInBody(sheet, backdrop) {
@@ -1487,9 +1499,12 @@ function enhanceDirectionSelects() {
     document.addEventListener('click', event => {
       const trigger = event.target.closest('.premium-direction-trigger');
       if (trigger) {
+        event.preventDefault();
         const root = trigger.closest('.premium-direction-select');
+        if (!root) return;
         const field = root?.closest('.field');
         const select = getPremiumSelect(field);
+        if (select) syncPremiumDirectionSelect(select);
         const isOpen = root.classList.contains('is-open');
         closePremiumDirectionSelects(root);
         root.classList.toggle('is-open', !isOpen);
@@ -1500,6 +1515,7 @@ function enhanceDirectionSelects() {
 
       const option = event.target.closest('.premium-direction-option');
       if (option) {
+        event.preventDefault();
         const field = option.closest('.field');
         const select = getPremiumSelect(field);
         if (select) {
@@ -1568,6 +1584,7 @@ function bindForms() {
   });
 
   enhanceContactForms();
+  enhanceDirectionSelects();
 
   $$('.contact-form').forEach(form => {
     form.addEventListener('submit', async event => {
@@ -1667,6 +1684,7 @@ function bindFocusRefresh() {
 }
 
 function boot() {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   markDecorativeIcons();
   bindSwipeToClose($('#drawer'), closeDrawer);
   bindNavigation();
@@ -1677,8 +1695,6 @@ function boot() {
     if (event.key === 'Escape') {
       closeTrainerModal();
       closeDrawer();
-      closeScheduleFilterSheet();
-      closeTrainerFilterSheet();
     }
   });
   $('#openDrawer')?.addEventListener('click', toggleDrawer);
