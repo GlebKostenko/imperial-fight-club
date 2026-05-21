@@ -112,7 +112,6 @@ TRAINERS = [
         "category": "boxing",
         "experience": "12 лет",
         "achievements": ["Мастер спорта по боксу", "Мастер спорта по кикбоксингу"],
-        "quote": "Техника, дисциплина и характер рождаются в постоянной практике.",
         "photo": "/assets/seed/trainer-aleksenko-igor.webp",
         "isActive": True,
         "showOnHome": True,
@@ -128,7 +127,6 @@ TRAINERS = [
         "category": "wrestling",
         "experience": "11 лет",
         "achievements": ["Мастер спорта по вольной борьбе", "Мастер спорта по самбо"],
-        "quote": "Борьба формирует характер, выдержку и уверенность в себе.",
         "photo": "/assets/seed/trainer-tanashev-rustam.webp",
         "isActive": True,
         "showOnHome": True,
@@ -144,7 +142,6 @@ TRAINERS = [
         "category": "wrestling",
         "experience": "9 лет",
         "achievements": ["Мастер спорта по вольной борьбе"],
-        "quote": "Сильная база и регулярная практика дают стабильный результат.",
         "photo": "/assets/seed/trainer-shamil-akhmedov.webp",
         "isActive": True,
         "showOnHome": True,
@@ -160,7 +157,6 @@ TRAINERS = [
         "category": "boxing",
         "experience": "10 лет",
         "achievements": ["Мастер спорта по боксу"],
-        "quote": "Системная работа и внимание к деталям помогают расти быстрее.",
         "photo": "/assets/seed/trainer-shamil-kaziev.webp",
         "isActive": True,
         "showOnHome": True,
@@ -171,12 +167,12 @@ TRAINERS = [
 ]
 
 PRICING = [
-    {"name": "Разовое занятие", "slug": "single", "price": 800, "period": "/ занятие", "description": "Для первого знакомства или нерегулярных визитов.", "features": ["Любое направление", "Инструктаж перед занятием", "Без абонемента"], "isPopular": False, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 1},
-    {"name": "8 тренировок", "slug": "eight", "price": 5200, "period": "/ месяц", "description": "Оптимально для стабильного прогресса 2 раза в неделю.", "features": ["8 занятий", "Заморозка 7 дней", "Группы по уровню"], "isPopular": True, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 2},
-    {"name": "12 тренировок", "slug": "twelve", "price": 6900, "period": "/ месяц", "description": "Для активной подготовки и быстрого роста формы.", "features": ["12 занятий", "Заморозка 10 дней", "Приоритетная запись"], "isPopular": False, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 3},
-    {"name": "Безлимит", "slug": "unlimited", "price": 8900, "period": "/ месяц", "description": "Для тех, кто хочет тренироваться часто.", "features": ["Безлимитные группы", "ОФП включена", "Скидка на персоналки"], "isPopular": False, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 4},
-    {"name": "Персональная тренировка", "slug": "personal-single", "price": 2500, "period": "/ занятие", "description": "Индивидуальная тренировка с тренером под вашу цель и уровень подготовки.", "features": ["Персональная работа с тренером", "Коррекция техники", "Индивидуальная нагрузка"], "isPopular": False, "showOnHome": False, "isFeaturedHome": False, "showOnMain": False, "isActive": True, "order": 5},
-    {"name": "10 персональных тренировок", "slug": "personal-10", "price": 21000, "period": "/ пакет", "description": "Пакет индивидуальных занятий по 2 100 ₽ за тренировку вместо 2 500 ₽.", "features": ["10 персональных тренировок", "2 100 ₽ за тренировку", "Экономия 4 000 ₽", "Гибкий график с тренером"], "isPopular": True, "showOnHome": False, "isFeaturedHome": False, "showOnMain": False, "isActive": True, "order": 6},
+    {"name": "Разовое занятие", "slug": "single", "price": 800, "period": "/ занятие", "features": ["Любое направление", "Инструктаж перед занятием", "Без абонемента"], "isPopular": False, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 1},
+    {"name": "8 тренировок", "slug": "eight", "price": 5200, "period": "/ месяц", "features": ["8 занятий", "Заморозка 7 дней", "Группы по уровню"], "isPopular": True, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 2},
+    {"name": "12 тренировок", "slug": "twelve", "price": 6900, "period": "/ месяц", "features": ["12 занятий", "Заморозка 10 дней", "Приоритетная запись"], "isPopular": False, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 3},
+    {"name": "Безлимит", "slug": "unlimited", "price": 8900, "period": "/ месяц", "features": ["Безлимитные группы", "ОФП включена", "Скидка на персоналки"], "isPopular": False, "showOnHome": True, "isFeaturedHome": True, "showOnMain": True, "isActive": True, "order": 4},
+    {"name": "Персональная тренировка", "slug": "personal-single", "price": 2500, "period": "/ занятие", "features": ["Персональная работа с тренером", "Коррекция техники", "Индивидуальная нагрузка"], "isPopular": False, "showOnHome": False, "isFeaturedHome": False, "showOnMain": False, "isActive": True, "order": 5},
+    {"name": "10 персональных тренировок", "slug": "personal-10", "price": 21000, "period": "/ пакет", "features": ["10 персональных тренировок", "2 100 ₽ за тренировку", "Экономия 4 000 ₽", "Гибкий график с тренером"], "isPopular": True, "showOnHome": False, "isFeaturedHome": False, "showOnMain": False, "isActive": True, "order": 6},
 ]
 
 GALLERY = [

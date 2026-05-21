@@ -20,6 +20,7 @@ const SPORT_LABELS = { wrestling:'Вольная борьба', boxing:'Бокс
 const AUDIENCE_LABELS = { men:'Мужчины', women:'Женщины', all:'Все' };
 const AGE_LABELS = { kids:'Дети', teens:'Подростки', adults:'Взрослые', all:'Все' };
 const GROUP_LABELS = { beginners:'Новички', advanced:'Продвинутые', competition:'Соревнования', all:'Все уровни' };
+const CONTACT_TIME_LABELS = { morning:'Утро', afternoon:'День', evening:'Вечер', any:'Любое время', anytime:'Любое время' };
 const DIRECTION_ICON_IMAGE_OPTIONS = [
     { value: '/assets/directions/boxing.png', label: 'boxing.png' },
     { value: '/assets/directions/functional.png', label: 'functional.png' },
@@ -31,6 +32,13 @@ const DIRECTION_ICON_IMAGE_OPTIONS = [
     { value: '/assets/directions/sambo.png', label: 'sambo.png' },
     { value: '/assets/directions/wrestling.png', label: 'wrestling.png' }
 ];
+const DEFAULT_DIRECTION_ICON_SCALES = {
+    wrestling: 1.42,
+    sambo: 0.9,
+    mma: 0.9,
+    judo: 0.96,
+    functional: 0.96
+};
 const TRAINER_SOCIAL_OPTIONS = ['Telegram', 'Instagram', 'VK', 'YouTube', 'WhatsApp', 'Max', 'TikTok'];
 
 const WEEK_DAYS = [
@@ -177,6 +185,20 @@ function directionIconImagePreview(src = '', className = 'direction-icon-image-p
     return `<img class="${className}" src="${escapeAttr(value)}" alt="" width="42" height="42" loading="lazy" decoding="async">`;
 }
 
+function directionIconScaleValue(direction = {}) {
+    const explicitScale = direction?.iconScale ?? direction?.directionIconScale;
+    const scale = Number(explicitScale);
+    if (explicitScale !== undefined && explicitScale !== null && explicitScale !== '' && Number.isFinite(scale)) {
+        return Math.min(1.8, Math.max(0.5, scale));
+    }
+    const image = String(direction.iconImage || direction.iconMask || direction.mask || '').trim().toLowerCase();
+    const imageKey = image.match(/\/?([a-z0-9_-]+)\.(?:png|webp|svg|jpe?g)(?:[?#].*)?$/)?.[1] || '';
+    const slug = String(direction.slug || '').trim().toLowerCase();
+    const fallbackScale = Number(DEFAULT_DIRECTION_ICON_SCALES[imageKey] || DEFAULT_DIRECTION_ICON_SCALES[slug] || 1);
+    if (!Number.isFinite(fallbackScale)) return 1;
+    return Math.min(1.8, Math.max(0.5, fallbackScale));
+}
+
 function directionOptions(selected = '') {
     let html = '<option value="">Выберите направление</option>';
     html += directionsData.map(d => `<option value="${escapeAttr(d.slug || '')}" ${selected === d.slug ? 'selected' : ''}>${escapeAttr(d.name || d.slug)}</option>`).join('');
@@ -186,6 +208,30 @@ function directionOptions(selected = '') {
 function trainerSpecialtiesText(trainer = {}) {
     const labels = getSportLabels();
     return trainerFilters(trainer).map(item => labels[item] || item).join(' / ');
+}
+
+function trainerSubtitleText(trainer = {}) {
+    return [trainerSpecialtiesText(trainer), trainer.experience].filter(Boolean).join(' · ');
+}
+
+function contactPreferredTimeLabel(value = '') {
+    const raw = String(value || '').trim();
+    const key = raw.toLowerCase();
+    return CONTACT_TIME_LABELS[key] || raw || '-';
+}
+
+function contactDirectionLabel(value = '') {
+    const raw = String(value || '').trim();
+    if (!raw) return '-';
+    const labels = getSportLabels();
+    const direct = labels[raw] || SPORT_LABELS[raw];
+    if (direct) return direct;
+    const normalized = raw.toLowerCase();
+    const direction = directionsData.find(d => (
+        String(d.slug || '').toLowerCase() === normalized ||
+        String(d.name || '').toLowerCase() === normalized
+    ));
+    return direction?.name || raw;
 }
 
 
@@ -287,12 +333,6 @@ function renderTrainerFilterOptions() {
     if (!select) return;
     const current = select.value;
     const labels = getSportLabels();
-    trainersData.forEach(trainer => {
-        trainerFilters(trainer).forEach(value => {
-            if (!value) return;
-            labels[value] = labels[value] || SPORT_LABELS[value] || value;
-        });
-    });
     select.innerHTML = '<option value="">Все направления</option>' + Object.entries(labels)
         .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'ru'))
         .map(([value, label]) => `<option value="${escapeAttr(value)}">${escapeAttr(label)}</option>`).join('');
@@ -338,16 +378,17 @@ function normalizeSlotTrainers(slot = {}) {
     const raw = Array.isArray(slot.trainers) && slot.trainers.length
         ? slot.trainers
         : String(slot.trainer || '').split(/\s*[·•]\s*|,\s*|;\s*/);
+    const currentTrainerNames = new Set(trainersData.map(t => String(t.name || '').trim()).filter(Boolean));
     return raw
         .map(name => String(name || '').trim())
         .filter(name => name && name !== 'Тренер клуба' && name !== 'Уточняйте у администратора' && name !== 'Тренер уточняется')
+        .filter(name => currentTrainerNames.has(name))
         .filter((name, index, arr) => arr.indexOf(name) === index);
 }
 
 function trainerCheckboxes(selectedNames = []) {
     const selected = new Set(selectedNames.map(name => String(name || '').trim()).filter(Boolean));
     const names = trainersData.map(t => t.name).filter(Boolean);
-    selected.forEach(name => { if (!names.includes(name)) names.unshift(name); });
     return names.map(name => `<label><input type="checkbox" class="sch-trainer-check" value="${escapeAttr(name)}" data-summary="${escapeAttr(name)}" ${selected.has(name) ? 'checked' : ''}> ${escapeAttr(name)}</label>`).join('');
 }
 
@@ -796,10 +837,9 @@ function renderTrainers() {
         <div class="card">
             ${t.photo ? `<img src="${imageUrl(t.photo)}" class="card-image" width="600" height="400" loading="lazy" decoding="async" alt="${escapeAttr(t.name)}">` : '<div class="card-image"><i class="fas fa-user" aria-hidden="true"></i></div>'}
             <div class="card-title">${t.name}</div>
-            <div class="card-subtitle">${trainerSpecialtiesText(t)}${t.experience ? ' · ' + t.experience : ''}</div>
+            <div class="card-subtitle">${escapeAttr(trainerSubtitleText(t))}</div>
             ${trainerSocial(t) ? `<a class="trainer-social-link" href="${escapeAttr(trainerSocial(t).url)}" target="_blank" rel="noopener noreferrer"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> ${escapeAttr(trainerSocial(t).label)}</a>` : ''}
             <div class="card-text">${renderAchievements(t.achievements)}</div>
-            <div class="card-text" style="font-style:italic;color:var(--gray-500);font-size:13px;">${t.quote ? '&laquo;' + t.quote + '&raquo;' : ''}</div>
             ${homeControlHtml('trainers', t)}
             <div class="card-actions">
                 <button class="btn btn-sm btn-secondary" aria-label="Редактировать тренера ${escapeAttr(t.name)}" onclick="editTrainer('${t._id}')"><i class="fas fa-edit" aria-hidden="true"></i></button>
@@ -875,7 +915,6 @@ function renderPricing() {
             </div>
             <div style="font-size:32px;font-weight:800;color:var(--black);margin-bottom:4px">${p.price.toLocaleString()} ₽</div>
             <div style="color:var(--gray-500);margin-bottom:16px">${p.period}</div>
-            <div class="card-text">${p.description}</div>
             ${homeControlHtml('pricing', p)}
             <ul style="list-style:none;padding:0;margin-bottom:16px">
                 ${p.features.map(f => `<li style="padding:4px 0;font-size:14px;color:var(--gray-600)"><i class="fas fa-check" aria-hidden="true" style="color:var(--yellow);margin-right:8px;"></i>${escapeAttr(f)}</li>`).join('')}
@@ -934,8 +973,8 @@ function renderContacts() {
         <tr>
             <td><strong>${c.name}</strong></td>
             <td>${c.phone}</td>
-            <td>${c.direction || '-'}</td>
-            <td>${c.preferredTime || '-'}</td>
+            <td>${escapeAttr(contactDirectionLabel(c.direction))}</td>
+            <td>${escapeAttr(contactPreferredTimeLabel(c.preferredTime))}</td>
             <td><span class="badge ${statusClasses[c.status]}">${statusLabels[c.status]}</span></td>
             <td>${new Date(c.createdAt).toLocaleDateString('ru-RU')}</td>
             <td>
@@ -981,58 +1020,103 @@ function getTrainerForm(trainer = null) {
     const isEdit = !!trainer;
     const selectedFilters = trainerFilters(trainer);
     const sportCheckboxes = Object.entries(getSportLabels()).map(([value, label]) => `
-        <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px;">
-            <input type="checkbox" name="filters" value="${value}" ${selectedFilters.includes(value) ? 'checked' : ''}> ${label}
+        <label class="trainer-direction-option">
+            <input type="checkbox" name="filters" value="${value}" ${selectedFilters.includes(value) ? 'checked' : ''}>
+            <span>${escapeAttr(label)}</span>
         </label>`).join('');
+    const selectedCount = selectedFilters.length;
+    const achievementsCount = normalizeAchievements(trainer?.achievements).length;
     return `
-        <form id="trainer-form" data-id="${trainer?._id || ''}">
-            <div class="form-group">
-                <label>Имя</label>
-                <input type="text" name="name" value="${escapeAttr(trainer?.name || '')}" required>
-            </div>
-            <div class="form-group">
-                <label>Направления / фильтры тренера</label>
-                <div style="display:flex;gap:12px;flex-wrap:wrap;">${sportCheckboxes}</div>
-                <div class="hint">Выберите одно или несколько направлений. Они используются и как фильтры, и как специализации на карточке тренера.</div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Стаж</label>
-                    <input type="text" name="experience" value="${escapeAttr(trainer?.experience || '')}" required placeholder="Например: 10 лет">
+        <form id="trainer-form" class="trainer-editor-form" data-id="${trainer?._id || ''}">
+            <div class="trainer-form-summary">
+                <div>
+                    <div class="trainer-form-eyebrow">${isEdit ? 'Редактирование тренера' : 'Новый тренер'}</div>
+                    <strong>${escapeAttr(trainer?.name || 'Карточка тренера')}</strong>
+                </div>
+                <div class="trainer-form-badges" aria-label="Сводка карточки">
+                    <span>${selectedCount ? `${selectedCount} напр.` : 'Без направления'}</span>
+                    <span>${achievementsCount ? `${achievementsCount} достиж.` : 'Достижения не заданы'}</span>
                 </div>
             </div>
-            <div class="form-group checkbox-line">
-                <label><input type="checkbox" name="showOnHome" ${isShownOnHome(trainer || {}) ? 'checked' : ''}> Показывать тренера на главной</label>
-                <div class="hint">Если не выбран ни один тренер, на главной будут показаны первые три активных тренера.</div>
-            </div>
-            <div class="form-group">
-                <label>Достижения</label>
-                <textarea name="achievements" placeholder="Одно достижение на строку">${normalizeAchievements(trainer?.achievements).join('\n')}</textarea>
-                <div class="hint">Каждое достижение отображается отдельной строкой на странице тренеров и на карточке тренера на главной.</div>
-            </div>
-            <div class="form-group">
-                <label>Цитата</label>
-                <textarea name="quote">${trainer?.quote || ''}</textarea>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Название соцсети</label>
-                    <select name="socialLabel">
-                        ${trainerSocialOptions(trainer?.socialLabel || trainer?.social?.label || '')}
-                    </select>
+
+            <div class="trainer-form-grid">
+                <div class="trainer-form-main">
+                    <section class="trainer-form-section">
+                        <div class="trainer-form-section-head">
+                            <h4>Основное</h4>
+                            <p>Имя и стаж видны на публичной карточке.</p>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Имя</label>
+                                <input type="text" name="name" value="${escapeAttr(trainer?.name || '')}" required autocomplete="name">
+                            </div>
+                            <div class="form-group">
+                                <label>Стаж</label>
+                                <input type="text" name="experience" value="${escapeAttr(trainer?.experience || '')}" required placeholder="Например: 10 лет">
+                            </div>
+                        </div>
+                        <div class="form-group checkbox-line trainer-home-toggle">
+                            <label><input type="checkbox" name="showOnHome" ${isShownOnHome(trainer || {}) ? 'checked' : ''}> Показывать тренера на главной</label>
+                            <div class="hint">Если никто не выбран, на главной автоматически показываются первые активные тренеры.</div>
+                        </div>
+                    </section>
+
+                    <section class="trainer-form-section">
+                        <div class="trainer-form-section-head">
+                            <h4>Направления</h4>
+                            <p>Выберите одно или несколько направлений для фильтров и подписи на карточке. Можно оставить пустым.</p>
+                        </div>
+                        <div class="trainer-directions-grid" aria-label="Направления тренера">${sportCheckboxes}</div>
+                    </section>
+
+                    <section class="trainer-form-section">
+                        <div class="trainer-form-section-head">
+                            <h4>Профиль</h4>
+                            <p>Каждая строка станет отдельным пунктом в карточке тренера.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Достижения</label>
+                            <textarea name="achievements" placeholder="Одно достижение на строку">${normalizeAchievements(trainer?.achievements).join('\n')}</textarea>
+                        </div>
+                    </section>
+
+                    <section class="trainer-form-section">
+                        <div class="trainer-form-section-head">
+                            <h4>Контакты</h4>
+                            <p>Ссылка отображается отдельной кнопкой на карточке.</p>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Название соцсети</label>
+                                <select name="socialLabel">
+                                    ${trainerSocialOptions(trainer?.socialLabel || trainer?.social?.label || '')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Ссылка на соцсеть</label>
+                                <input type="url" name="socialUrl" inputmode="url" spellcheck="false" value="${escapeAttr(trainer?.socialUrl || trainer?.social?.url || trainer?.socialLink || '')}" placeholder="https://t.me/username">
+                            </div>
+                        </div>
+                    </section>
                 </div>
-                <div class="form-group">
-                    <label>Ссылка на соцсеть</label>
-                    <input type="url" name="socialUrl" inputmode="url" spellcheck="false" value="${escapeAttr(trainer?.socialUrl || trainer?.social?.url || trainer?.socialLink || '')}" placeholder="https://t.me/username">
+
+                <aside class="trainer-form-aside">
+                    <section class="trainer-form-section trainer-photo-section">
+                        <div class="trainer-form-section-head">
+                            <h4>Фото</h4>
+                            <p>Кадр карточки 3:2, лучше портрет по пояс.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Фотография</label>
+                            <label class="file-upload trainer-photo-upload" for="trainer-photo">
+                                <input type="file" id="trainer-photo" accept="image/*">
+                                <div class="file-upload-label"><i class="fas fa-cloud-upload-alt" aria-hidden="true" style="font-size:24px;display:block;margin-bottom:8px;"></i>Нажмите или перетащите фото сюда</div>
+                                ${trainer?.photo ? `<img src="${imageUrl(trainer.photo)}" width="600" height="400" loading="lazy" decoding="async" class="file-preview" id="photo-preview" alt="Фото тренера">` : '<img class="file-preview" id="photo-preview" width="600" height="400" alt="" style="display:none">'}
+                            </label>
+                        </div>
+                    </section>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Фотография</label>
-                <label class="file-upload" for="trainer-photo">
-                    <input type="file" id="trainer-photo" accept="image/*">
-                    <div class="file-upload-label"><i class="fas fa-cloud-upload-alt" aria-hidden="true" style="font-size:24px;display:block;margin-bottom:8px;"></i>Нажмите или перетащите фото сюда</div>
-                    ${trainer?.photo ? `<img src="${imageUrl(trainer.photo)}" width="600" height="400" loading="lazy" decoding="async" class="file-preview" id="photo-preview" alt="Фото тренера">` : '<img class="file-preview" id="photo-preview" width="600" height="400" alt="" style="display:none">'}
-                </label>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
@@ -1064,10 +1148,6 @@ function setupTrainerForm() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const filters = [...form.querySelectorAll('input[name="filters"]:checked')].map(cb => cb.value);
-        if (!filters.length) {
-            showToast('Выберите хотя бы одно направление тренера', 'error');
-            return;
-        }
         const labels = getSportLabels();
         const specialization = filters.map(value => labels[value] || SPORT_LABELS[value] || value).join(' / ');
         const socialUrl = normalizeExternalUrl(form.socialUrl?.value || '');
@@ -1078,13 +1158,12 @@ function setupTrainerForm() {
             specialization,
             specializations: filters.map(value => labels[value] || SPORT_LABELS[value] || value),
             filters,
-            category: filters[0],
+            category: filters[0] || '',
             experience: form.experience.value,
             achievements: form.achievements.value.split('\n').map(v => v.trim()).filter(Boolean),
             homeAchievements: form.achievements.value.split('\n').map(v => v.trim()).filter(Boolean),
             featuredAchievements: form.achievements.value.split('\n').map(v => v.trim()).filter(Boolean),
             mainAchievements: form.achievements.value.split('\n').map(v => v.trim()).filter(Boolean),
-            quote: form.quote.value,
             order: form.dataset.id ? (trainersData.find(t => t._id === form.dataset.id)?.order || 0) : trainersData.length + 1,
             photo: photoUrl || (form.dataset.id ? trainersData.find(t => t._id === form.dataset.id)?.photo : ''),
             socialLabel,
@@ -1125,7 +1204,8 @@ window.deleteTrainer = async (id) => {
     try {
         await apiDelete(`/api/trainers/${id}`);
         showToast('Тренер удалён', 'success');
-        loadTrainers();
+        await loadTrainers();
+        await loadDirections();
     } catch {
         showToast('Ошибка удаления', 'error');
     }
@@ -1145,6 +1225,7 @@ document.getElementById('add-direction-btn')?.addEventListener('click', () => {
 function getSportForm(direction = null) {
     const isEdit = !!direction;
     const selectedIconImage = directionIconImageValue(direction || {});
+    const selectedIconScale = directionIconScaleValue(direction || {});
     return `
         <form id="sport-form" data-id="${direction?._id || ''}">
             <div class="form-row">
@@ -1178,13 +1259,9 @@ function getSportForm(direction = null) {
                 </div>
             </div>
             <div class="form-group">
-                <label>Порядок</label>
-                <input type="number" name="order" value="${direction?.order || directionsData.length + 1}">
-            </div>
-            <div class="form-group">
-                <label>Тренеров на карточке главной</label>
-                <input type="number" name="homeTrainerLimit" min="0" max="20" value="${Number(direction?.homeTrainerLimit ?? direction?.trainerLimit ?? 4)}">
-                <div class="hint">Сколько тренеров показывать в карточке этого направления на главной. Например, 2 из 10.</div>
+                <label>Масштаб картинки на главной</label>
+                <input type="number" name="iconScale" min="0.5" max="1.8" step="0.05" value="${selectedIconScale}">
+                <div class="hint">1 — обычный размер. Уменьшайте до 0.9, если картинка выглядит крупной; увеличивайте до 1.3–1.5, если выглядит мелкой.</div>
             </div>
             <div class="form-group">
                 <label>Краткое описание</label>
@@ -1204,6 +1281,12 @@ function setupSportForm() {
         const preview = form.querySelector('.direction-icon-image-preview-form');
         if (preview) preview.src = form.iconImage.value;
     });
+    form.iconScale?.addEventListener('input', () => {
+        const preview = form.querySelector('.direction-icon-image-preview-form');
+        if (preview) preview.style.transform = `scale(${directionIconScaleValue({ iconScale: form.iconScale.value })})`;
+    });
+    const preview = form.querySelector('.direction-icon-image-preview-form');
+    if (preview) preview.style.transform = `scale(${directionIconScaleValue({ iconScale: form.iconScale?.value })})`;
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const existing = form.dataset.id ? directionsData.find(d => d._id === form.dataset.id) : null;
@@ -1216,13 +1299,13 @@ function setupSportForm() {
             isFeaturedHome: true,
             shortDescription: form.shortDescription.value,
             description: form.shortDescription.value,
-            homeTrainerLimit: Math.max(0, parseInt(form.homeTrainerLimit.value, 10) || 0),
             schedule: existing?.schedule || [],
             isActive: true,
             icon: '',
             iconImage,
             iconMask: '',
-            order: parseInt(form.order.value) || 0
+            iconScale: directionIconScaleValue({ iconScale: form.iconScale?.value }),
+            order: existing?.order ?? directionsData.length + 1
         };
         try {
             if (form.dataset.id) {
@@ -1255,6 +1338,7 @@ window.deleteSport = async (id) => {
         await apiDelete(`/api/directions/${id}`);
         showToast('Направление удалено', 'success');
         await loadDirections();
+        await loadTrainers();
     } catch {
         showToast('Ошибка удаления направления', 'error');
     }
@@ -1264,10 +1348,18 @@ function scheduleRowHtml(s = {}, i = 0) {
     const selectedDays = normalizeScheduleDays(s.day || '');
     const { start, end } = parseTimeRange(s);
     const selectedTrainers = normalizeSlotTrainers(s);
+    const slotNumber = Number.isFinite(Number(i)) ? Number(i) + 1 : '';
     const dayCheckboxes = WEEK_DAYS.map(([shortName, fullName]) => `
         <label><input type="checkbox" class="sch-day-check" value="${shortName}" data-summary="${shortName}" ${selectedDays.includes(shortName) ? 'checked' : ''}> ${fullName}</label>`).join('');
     return `
         <div class="schedule-row" data-index="${i}">
+            <div class="schedule-row-head">
+                <div>
+                    <span class="schedule-row-kicker">Слот${slotNumber ? ` ${slotNumber}` : ''}</span>
+                    <strong>${start && end ? `${start} — ${end}` : 'Новое занятие'}</strong>
+                </div>
+                <button class="remove-slot" type="button" aria-label="Удалить слот расписания" onclick="this.closest('.schedule-row').remove()"><i class="fas fa-trash" aria-hidden="true"></i><span>Удалить</span></button>
+            </div>
             <div class="schedule-row-top">
                 <div class="schedule-row-field">
                     <label>Дни недели</label>
@@ -1282,7 +1374,6 @@ function scheduleRowHtml(s = {}, i = 0) {
                         <select class="sch-time-start" aria-label="Начало занятия">${buildTimeOptions(start)}</select>
                         <select class="sch-time-end" aria-label="Конец занятия">${buildTimeOptions(end)}</select>
                     </div>
-                    <div class="schedule-note">Шаг времени — 30 минут</div>
                 </div>
             </div>
             <div class="schedule-row-fields">
@@ -1319,7 +1410,6 @@ function scheduleRowHtml(s = {}, i = 0) {
                         <option value="women" ${s.audience === 'women' ? 'selected' : ''}>Женщины</option>
                     </select>
                 </div>
-                <button class="remove-slot" type="button" aria-label="Удалить слот расписания" onclick="this.closest('.schedule-row').remove()"><i class="fas fa-times" aria-hidden="true"></i></button>
             </div>
         </div>`;
 }
@@ -1328,7 +1418,14 @@ function getScheduleForm(direction = null) {
     const selectedSlug = direction?.slug || '';
     const rows = direction?.schedule?.length ? direction.schedule.map((s, i) => scheduleRowHtml(s, i)).join('') : scheduleRowHtml({}, 0);
     return `
-        <form id="schedule-form" data-id="${direction?._id || ''}">
+        <form id="schedule-form" class="schedule-admin-form" data-id="${direction?._id || ''}">
+            <div class="schedule-form-summary">
+                <div>
+                    <div class="trainer-form-eyebrow">${direction ? 'Редактирование расписания' : 'Новое расписание'}</div>
+                    <strong>${escapeAttr(direction?.name || 'Выберите направление')}</strong>
+                </div>
+                <span>${direction?.schedule?.length || 1} слот</span>
+            </div>
             <div class="direction-select-row">
                 <div class="form-group">
                     <label>Slug (URL) направления</label>
@@ -1356,7 +1453,7 @@ function getScheduleForm(direction = null) {
 window.addScheduleRow = () => {
     const editor = document.getElementById('schedule-editor');
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = scheduleRowHtml({}, Date.now()).trim();
+    wrapper.innerHTML = scheduleRowHtml({}, editor.children.length).trim();
     const row = wrapper.firstElementChild;
     editor.appendChild(row);
     setupDaysDropdowns(row);
@@ -1389,6 +1486,8 @@ function setupScheduleForm() {
     const updateName = () => {
         const direction = findDirectionBySlug(slugSelect.value);
         nameInput.value = direction?.name || '';
+        const summaryTitle = form.querySelector('.schedule-form-summary strong');
+        if (summaryTitle) summaryTitle.textContent = direction?.name || 'Выберите направление';
         if (!form.dataset.id && direction) {
             const editor = document.getElementById('schedule-editor');
             const rows = direction.schedule?.length ? direction.schedule.map((slot, index) => scheduleRowHtml(slot, index)).join('') : scheduleRowHtml({}, 0);
@@ -1479,10 +1578,6 @@ function getPricingForm(pricing = null) {
                 </div>
             </div>
             <div class="form-group">
-                <label>Описание</label>
-                <textarea name="description" required>${pricing?.description || ''}</textarea>
-            </div>
-            <div class="form-group">
                 <label>Включённые услуги (одна на строку)</label>
                 <textarea name="features" rows="4" placeholder="8 занятий в месяц&#10;Заморозка 7 дней">${features}</textarea>
             </div>
@@ -1510,7 +1605,6 @@ function setupPricingForm() {
             slug: form.slug.value,
             price: parseInt(form.price.value),
             period: form.period.value,
-            description: form.description.value,
             features: form.features.value.split('\n').filter(f => f.trim()),
             isPopular: form.isPopular.checked,
             isActive: true,
@@ -1736,7 +1830,6 @@ function renderBudgetSettingsForm() {
     if (!form) return;
     const budget = siteSettingsData.budget || {};
     form.elements.budgetTitle.value = budget.title || 'Бюджетные места в школе единоборств';
-    form.elements.budgetIntro.value = budget.intro || 'Информация о бесплатных и льготных местах для учеников клуба.';
     form.elements.budgetImage.value = budget.image || '';
     const preview = document.getElementById('budget-image-preview');
     if (preview && budget.image) { preview.src = budget.image; preview.style.display = 'block'; }
@@ -1756,7 +1849,6 @@ function collectBudgetSettings() {
         ...(siteSettingsData || {}),
         budget: {
             title: form.elements.budgetTitle.value.trim(),
-            intro: form.elements.budgetIntro.value.trim(),
             image: form.elements.budgetImage.value.trim(),
             rules,
         }
@@ -1774,7 +1866,7 @@ document.getElementById('budget-image-file')?.addEventListener('change', async (
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-        const url = await uploadFile(file, 'budget', { aspect: '10 / 3', label: 'Кадр страницы «Бюджетные места»' });
+        const url = await uploadFile(file, 'budget', { aspect: '4 / 5', label: 'Вертикальный кадр страницы «Бюджетные места»' });
         const form = document.getElementById('budget-settings-form');
         form.elements.budgetImage.value = url;
         const preview = document.getElementById('budget-image-preview');

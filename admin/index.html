@@ -121,6 +121,36 @@ body{font-family:'Inter',sans-serif;background:var(--gray-50);color:var(--black)
 .file-upload input{display:none;}
 .file-upload-label{color:var(--gray-500);font-size:14px;}
 .file-preview{max-width:100%;max-height:200px;border-radius:var(--radius);margin-top:12px;}
+.modal-content:has(.trainer-editor-form){max-width:min(980px,96vw)!important;}
+.trainer-editor-form{margin:-4px -4px 0;}
+.trainer-form-summary{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;padding:16px;border:1px solid var(--gray-200);border-radius:16px;background:linear-gradient(180deg,#fff 0%,#fafafa 100%);}
+.trainer-form-summary strong{display:block;margin-top:2px;font-size:18px;line-height:1.25;color:var(--black);}
+.trainer-form-eyebrow{font-size:11px;font-weight:800;line-height:1.2;color:var(--gray-500);text-transform:uppercase;letter-spacing:.08em;}
+.trainer-form-badges{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;}
+.trainer-form-badges span{display:inline-flex;align-items:center;min-height:30px;padding:6px 10px;border-radius:999px;background:#fff8c7;border:1px solid rgba(154,120,0,.16);color:#6f5700;font-size:12px;font-weight:800;line-height:1.1;white-space:nowrap;}
+.trainer-form-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start;}
+.trainer-form-main{display:grid;gap:14px;}
+.trainer-form-aside{position:sticky;top:10px;}
+.trainer-form-section{padding:18px;border:1px solid var(--gray-200);border-radius:16px;background:var(--white);box-shadow:0 10px 28px rgba(26,26,26,.04);}
+.trainer-form-section-head{margin-bottom:14px;}
+.trainer-form-section-head h4{margin:0 0 3px;font-size:15px;font-weight:800;line-height:1.25;color:var(--black);}
+.trainer-form-section-head p{margin:0;color:var(--gray-500);font-size:13px;line-height:1.45;}
+.trainer-editor-form .form-group{margin-bottom:0;}
+.trainer-editor-form .form-row{gap:12px;}
+.trainer-home-toggle{padding:12px 14px;border:1px solid var(--gray-200);border-radius:14px;background:#fffdf2;}
+.trainer-home-toggle label{display:flex;align-items:center;gap:10px;margin:0;color:var(--gray-700);font-size:14px;font-weight:800;text-transform:none;letter-spacing:0;}
+.trainer-home-toggle input{width:18px;height:18px;flex:0 0 auto;accent-color:var(--yellow);}
+.trainer-home-toggle .hint{margin:7px 0 0 28px;line-height:1.4;}
+.trainer-directions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}
+.trainer-direction-option{display:flex;align-items:center;gap:9px;min-height:44px;padding:10px 12px;border:1px solid var(--gray-200);border-radius:12px;background:var(--gray-50);color:var(--gray-700);font-size:13px;font-weight:800;line-height:1.2;cursor:pointer;transition:var(--transition);}
+.trainer-direction-option:hover{border-color:var(--gray-300);background:#fff;}
+.trainer-direction-option:has(input:checked){border-color:rgba(154,120,0,.38);background:#fff8c7;color:var(--black);}
+.trainer-direction-option:has(input:focus-visible){outline:3px solid rgba(255,215,0,.65);outline-offset:2px;}
+.trainer-direction-option input{width:16px;height:16px;flex:0 0 auto;accent-color:var(--yellow);}
+.trainer-photo-section{padding:16px;}
+.form-group .trainer-photo-upload{padding:18px;min-height:248px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;background:var(--gray-50);}
+.trainer-photo-upload .file-upload-label{font-weight:700;line-height:1.35;color:var(--gray-600);}
+.trainer-photo-upload .file-preview{width:100%;max-height:none;aspect-ratio:3/2;object-fit:cover;margin-top:14px;border:1px solid var(--gray-200);background:var(--white);}
 
 /* Schedule editor */
 .schedule-editor{display:flex;flex-direction:column;gap:12px;}
@@ -151,6 +181,7 @@ body{font-family:'Inter',sans-serif;background:var(--gray-50);color:var(--black)
 .faq-active-control{display:flex;align-items:center;gap:8px;min-height:48px;font-size:13px;font-weight:800;color:var(--gray-700);text-transform:none;letter-spacing:0}
 .faq-active-control input{width:auto!important}
 .budget-rule-row{grid-template-columns:1fr!important;align-items:stretch}.budget-rule-row .remove-contact-setting{justify-self:start}.budget-rule-row textarea{min-height:100px}
+#budget-image-preview{width:min(260px,100%);max-height:none;aspect-ratio:4/5;object-fit:cover}
 .settings-contact-row .form-group{margin-bottom:0;}
 .setting-row-actions{display:flex;gap:6px;align-items:center;}
 .setting-row-action{width:36px;height:36px;border:1px solid var(--gray-200);background:var(--gray-50);border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--gray-600);}
@@ -235,6 +266,31 @@ body{font-family:'Inter',sans-serif;background:var(--gray-50);color:var(--black)
 .schedule-row,.schedule-row-top,.schedule-row-fields{min-width:0;}
 .schedule-row-field select,.schedule-row-field input{min-width:0;}
 .checkbox-line label{display:flex;align-items:center;gap:8px;font-weight:700}.checkbox-line input{width:auto!important}
+
+/* Refined trainer and schedule forms */
+.modal-content:has(.schedule-admin-form){max-width:min(980px,96vw)!important;}
+.schedule-admin-form{margin:-4px -4px 0;}
+.schedule-form-summary{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;padding:16px;border:1px solid var(--gray-200);border-radius:16px;background:linear-gradient(180deg,#fff 0%,#fafafa 100%);}
+.schedule-form-summary strong{display:block;margin-top:2px;font-size:18px;line-height:1.25;color:var(--black);}
+.schedule-form-summary>span{display:inline-flex;align-items:center;min-height:30px;padding:6px 10px;border-radius:999px;background:#fff8c7;border:1px solid rgba(154,120,0,.16);color:#6f5700;font-size:12px;font-weight:800;line-height:1.1;white-space:nowrap;}
+.schedule-admin-form .direction-select-row{padding:16px;border:1px solid var(--gray-200);border-radius:16px;background:#fff;box-shadow:0 10px 28px rgba(26,26,26,.04);}
+.schedule-admin-form .form-group>label{color:var(--gray-700);}
+.schedule-admin-form #schedule-editor{margin-top:12px;}
+.schedule-admin-form .btn[onclick="addScheduleRow()"]{min-height:44px;margin-top:12px!important;border:1px solid var(--gray-200);background:#fff;color:var(--gray-700);}
+.schedule-admin-form .btn[onclick="addScheduleRow()"]:hover{background:var(--yellow);color:var(--black);border-color:var(--yellow);}
+.schedule-admin-form .schedule-row{display:grid!important;grid-template-columns:1fr!important;gap:14px!important;padding:16px!important;border:1px solid var(--gray-200)!important;border-radius:16px!important;background:#fff!important;box-shadow:0 10px 28px rgba(26,26,26,.05);}
+.schedule-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--gray-200);}
+.schedule-row-head strong{display:block;margin-top:2px;font-size:16px;line-height:1.25;color:var(--black);}
+.schedule-row-kicker{font-size:11px;font-weight:800;line-height:1.2;color:var(--gray-500);text-transform:uppercase;letter-spacing:.08em;}
+.schedule-admin-form .schedule-row-top{display:grid!important;grid-template-columns:minmax(260px,1fr) minmax(240px,.8fr)!important;gap:12px!important;}
+.schedule-admin-form .schedule-row-fields{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;align-items:start!important;}
+.schedule-admin-form .schedule-row-field{display:grid;gap:7px;}
+.schedule-admin-form .schedule-row-field label{font-size:11px;color:var(--gray-500);font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin:0;}
+.schedule-admin-form .schedule-row select,.schedule-admin-form .schedule-row input,.schedule-admin-form .multi-select summary{min-height:46px;border-radius:12px;border-color:var(--gray-200);background:#fff;}
+.schedule-admin-form .schedule-note{margin-top:7px;color:var(--gray-500);}
+.schedule-admin-form .remove-slot{width:auto!important;min-width:44px;height:40px;padding:0 12px;border:1px solid #fecaca!important;background:#fff1f2!important;color:var(--red)!important;border-radius:12px!important;font-size:13px;font-weight:800;gap:7px;}
+.schedule-admin-form .remove-slot:hover{background:#fee2e2!important;}
+.schedule-admin-form .multi-options label{min-height:38px;}
 
 /* Logo image */
 .login-logo-image{display:block;margin-bottom:12px;}
@@ -337,6 +393,21 @@ body{background:var(--admin-paper)}
 .modal-body{flex:1;overflow:auto;padding:16px 14px 22px!important}
 .modal-footer{position:sticky;bottom:0;z-index:2;padding:12px 14px calc(12px + env(safe-area-inset-bottom))!important;background:#fff!important}
 .form-row,.direction-select-row,.settings-contact-row,.faq-setting-row{grid-template-columns:1fr!important}
+.trainer-editor-form{margin:0!important}
+.trainer-form-summary{display:grid!important;gap:12px!important;padding:14px!important}
+.trainer-form-badges{justify-content:flex-start!important}
+.trainer-form-grid{grid-template-columns:1fr!important;gap:14px!important}
+.trainer-form-aside{position:static!important}
+.trainer-form-section{padding:14px!important;border-radius:16px!important}
+.trainer-directions-grid{grid-template-columns:1fr!important}
+.trainer-direction-option{min-height:48px!important}
+.form-group .trainer-photo-upload{min-height:220px!important}
+.schedule-admin-form{margin:0!important}
+.schedule-form-summary{display:grid!important;gap:12px!important;padding:14px!important}
+.schedule-admin-form .direction-select-row{padding:14px!important}
+.schedule-admin-form .schedule-row-top,.schedule-admin-form .schedule-row-fields{grid-template-columns:1fr!important}
+.schedule-row-head{align-items:flex-start!important}
+.schedule-admin-form .remove-slot{width:auto!important;justify-self:end}
 .form-group input,.form-group textarea,.form-group select,.multi-select summary{min-height:48px!important;font-size:16px!important}
 .schedule-row{padding:12px!important;border-radius:16px!important;background:#fff!important}
 .schedule-row-top,.schedule-row-fields{grid-template-columns:1fr!important}
@@ -571,16 +642,12 @@ body{background:var(--admin-paper)}
 <input type="text" name="budgetTitle" placeholder="Бюджетные места в школе единоборств">
 </div>
 <div class="form-group">
-<label>Вступительный текст</label>
-<textarea name="budgetIntro" placeholder="Короткое описание программы"></textarea>
-</div>
-<div class="form-group">
-<label>Фотография страницы</label>
+<label>Вертикальная фотография страницы</label>
 <input type="hidden" name="budgetImage">
 <label class="file-upload" for="budget-image-file">
 <input type="file" id="budget-image-file" accept="image/*">
-<div class="file-upload-label"><i class="fas fa-cloud-upload-alt" aria-hidden="true" style="font-size:24px;display:block;margin-bottom:8px;"></i>Загрузить фото для страницы</div>
-<img id="budget-image-preview" class="file-preview" width="1000" height="300" alt="Предпросмотр фото страницы" style="display:none;">
+<div class="file-upload-label"><i class="fas fa-cloud-upload-alt" aria-hidden="true" style="font-size:24px;display:block;margin-bottom:8px;"></i>Загрузить вертикальное фото 4:5</div>
+<img id="budget-image-preview" class="file-preview" width="800" height="1000" alt="Предпросмотр фото страницы" style="display:none;">
 </label>
 </div>
 <h3 style="margin:28px 0 12px"><i class="fas fa-list-ol"></i> Условия</h3>
@@ -749,6 +816,6 @@ body{background:var(--admin-paper)}
 
 <div class="toast-container" id="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<script src="/admin/admin.js?v=20260520-faq-admin"></script>
+<script src="/admin/admin.js?v=20260521-contact-direction-label"></script>
 </body>
 </html>

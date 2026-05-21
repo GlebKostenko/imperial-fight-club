@@ -597,11 +597,18 @@ const DIRECTION_ICONS = {
   karate: '/assets/directions/karate.png',
   sambo: '/assets/directions/sambo.png'
 };
+const DEFAULT_DIRECTION_ICON_SCALES = {
+  wrestling: 1.42,
+  sambo: 0.9,
+  mma: 0.9,
+  judo: 0.96,
+  functional: 0.96
+};
 
 function directionIconKey(direction = {}) {
   const image = String(direction.iconImage || direction.iconMask || direction.mask || '').trim().toLowerCase();
-  const imageKey = image.match(/\/?([a-z0-9_-]+)\.(?:png|webp|svg)(?:[?#].*)?$/)?.[1] || '';
-  if (imageKey && DIRECTION_ICONS[imageKey]) return imageKey;
+  const imageKey = image.match(/\/?([a-z0-9_-]+)\.(?:png|webp|svg|jpe?g)(?:[?#].*)?$/)?.[1] || '';
+  if (imageKey) return imageKey;
   const slug = String(direction.slug || '').trim().toLowerCase();
   const name = String(direction.name || '').trim().toLowerCase();
   if (DIRECTION_ICONS[slug]) return slug;
@@ -624,10 +631,22 @@ function directionIconSrc(direction = {}, iconKey = '') {
 
 function directionIconHtml(direction = {}) {
   const iconKey = directionIconKey(direction);
-  if (!iconKey) return `<span class="direction-icon-fallback" aria-hidden="true">${escapeHtml(direction.icon || '')}</span>`;
-  const src = `${directionIconSrc(direction, iconKey)}?v=20260518-png-icons`;
+  const srcValue = directionIconSrc(direction, iconKey);
+  if (!srcValue) return `<span class="direction-icon-fallback" aria-hidden="true">${escapeHtml(direction.icon || '')}</span>`;
+  const src = `${srcValue}?v=20260521-normalized-icons`;
   const label = escapeHtml(direction.name || 'Направление');
   return `<img class="direction-icon-image direction-icon-image--${iconKey}" src="${escapeHtml(src)}" alt="${label}" width="42" height="42" loading="lazy" decoding="async">`;
+}
+
+function directionIconScale(direction = {}) {
+  const explicitScale = direction.iconScale ?? direction.directionIconScale;
+  const scale = Number(explicitScale);
+  if (explicitScale !== undefined && explicitScale !== null && explicitScale !== '' && Number.isFinite(scale)) {
+    return Math.min(1.8, Math.max(0.5, scale));
+  }
+  const fallbackScale = Number(DEFAULT_DIRECTION_ICON_SCALES[directionIconKey(direction)] || 1);
+  if (!Number.isFinite(fallbackScale)) return 1;
+  return Math.min(1.8, Math.max(0.5, fallbackScale));
 }
 
 function directionCard(d) {
@@ -638,7 +657,7 @@ function directionCard(d) {
   const scheduleHref = hasSchedule ? `/schedule?direction=${encodeURIComponent(trainerFilter)}` : '/schedule';
   const scheduleFilterAttrs = hasSchedule ? ` data-schedule-filter="${escapeHtml(trainerFilter)}"` : '';
   const trainerFilterAttrs = hasTrainers ? ` data-trainer-filter="${escapeHtml(trainerFilter)}"` : '';
-  return `<article class="card direction-card" style="--direction-color:${escapeHtml(d.color || d.accentColor || '#ffd400')}">
+  return `<article class="card direction-card" style="--direction-color:${escapeHtml(d.color || d.accentColor || '#ffd400')};--direction-icon-scale:${directionIconScale(d)}">
     <div class="direction-card-copy">
       <h3>${escapeHtml(d.name)}</h3>
       <p>${escapeHtml(d.shortDescription || d.description || '')}</p>
@@ -676,6 +695,10 @@ function getDirectionLabel(value) {
   return direction?.name || CATEGORY_LABELS[value] || value;
 }
 
+function getActiveDirectionForValue(value = '') {
+  return state.directions.find(direction => direction.isActive !== false && directionMatchesFilterValue(direction, value));
+}
+
 function splitTrainerSpecialtyValue(value = '') {
   return String(value || '')
     .split(/\s*[\/,;]\s*/)
@@ -706,6 +729,7 @@ function getTrainerSpecialtyValues(t) {
     .flatMap(splitTrainerSpecialtyValue)
     .map(value => String(value || '').trim())
     .filter(Boolean)
+    .filter(value => !!getActiveDirectionForValue(value))
     .filter((value, index, arr) => arr.findIndex(item => normalizeFilterText(item) === normalizeFilterText(value)) === index);
 }
 
@@ -809,7 +833,6 @@ function pricingCard(p) {
   return `<article class="card price-card ${p.isPopular ? 'popular' : ''}">
     <div class="price-card-head">
       <h3>${escapeHtml(p.name)}</h3>
-      <p>${escapeHtml(p.description)}</p>
     </div>
     <div class="price-main">${Number(p.price || 0).toLocaleString('ru-RU')}₽ <span>${escapeHtml(p.period || '')}</span></div>
     <ul class="features-list">${(p.features || []).map(f => `<li><i class="fas fa-check" aria-hidden="true"></i>${escapeHtml(f)}</li>`).join('')}</ul>
@@ -819,7 +842,7 @@ function pricingCard(p) {
 
 function galleryCard(g) {
   const img = g.image ? `<img src="${API_URL}${escapeHtml(g.image)}" width="800" height="600" loading="lazy" decoding="async" alt="${escapeHtml(g.title)}">` : '<i class="fas fa-image" aria-hidden="true"></i>';
-  return `<article class="card"><div class="gallery-img">${img}</div><h3>${escapeHtml(g.title)}</h3><p>${escapeHtml(g.description || CATEGORY_LABELS[g.category] || '')}</p></article>`;
+  return `<article class="gallery-tile"><div class="gallery-img">${img}</div><h3 class="sr-only">${escapeHtml(g.title || CATEGORY_LABELS[g.category] || 'Фото зала')}</h3></article>`;
 }
 
 function normalizeDays(rawDay = '') {
@@ -837,6 +860,10 @@ function normalizeScheduleTrainers(slot = {}) {
   const names = raw
     .map(name => String(name || '').trim())
     .filter(name => name && name !== 'Уточняйте у администратора' && name !== 'Тренер уточняется' && name !== 'Тренер клуба')
+    .filter(name => {
+      const normalized = normalizeFilterText(name);
+      return state.trainers.some(trainer => trainer.isActive !== false && normalizeFilterText(trainer.name) === normalized);
+    })
     .filter((name, index, arr) => arr.indexOf(name) === index);
   return names.length ? names : ['Тренер клуба'];
 }
@@ -1367,7 +1394,6 @@ function applySiteSettings() {
   renderFaq();
   const budget = settings.budget || {};
   $$('[data-budget-title]').forEach(el => { el.textContent = budget.title || 'Бюджетные места в школе единоборств'; });
-  $$('[data-budget-intro]').forEach(el => { el.textContent = budget.intro || 'Информация о бесплатных и льготных местах для учеников клуба.'; });
   $$('[data-budget-image]').forEach(img => { img.src = normalizeImageUrl(budget.image || '/assets/ring-hall.svg'); });
   $$('[data-budget-rules]').forEach(list => {
     const rules = Array.isArray(budget.rules) && budget.rules.length ? budget.rules : [

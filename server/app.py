@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -170,6 +171,171 @@ async def delete_item(collection: str, item_id: str, message: str, not_found: st
     return {"message": message}
 
 
+DEFAULT_TRAINER_NAME = "Тренер клуба"
+TRAINER_PLACEHOLDER_NAMES = {
+    "тренер клуба",
+    "уточняйте у администратора",
+    "тренер уточняется",
+}
+
+
+def normalize_ref(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip().lower().replace("ё", "е"))
+
+
+def split_ref_values(value: Any) -> list[str]:
+    if isinstance(value, list):
+        raw_values = value
+    else:
+        raw_values = re.split(r"\s*[·•,;/]\s*", str(value or ""))
+    return [str(item or "").strip() for item in raw_values if str(item or "").strip()]
+
+
+def unique_values(values: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        key = normalize_ref(value)
+        if key and key not in seen:
+            seen.add(key)
+            result.append(value)
+    return result
+
+
+def clean_trainer_payload(data: dict[str, Any]) -> dict[str, Any]:
+    data.pop("quote", None)
+    return data
+
+
+def clean_direction_payload(data: dict[str, Any]) -> dict[str, Any]:
+    data.pop("homeTrainerLimit", None)
+    data.pop("trainerLimit", None)
+    return data
+
+
+def clean_pricing_payload(data: dict[str, Any]) -> dict[str, Any]:
+    data.pop("description", None)
+    return data
+
+
+def is_placeholder_trainer_name(value: Any) -> bool:
+    return normalize_ref(value) in TRAINER_PLACEHOLDER_NAMES
+
+
+async def remove_trainer_from_direction_schedules(trainer_name: str) -> int:
+    target = normalize_ref(trainer_name)
+    if not target:
+        return 0
+    touched_slots = 0
+    cursor = db[COLLECTIONS["directions"]].find({"schedule": {"$exists": True}})
+    async for direction in cursor:
+        changed = False
+        schedule = direction.get("schedule") or []
+        for slot in schedule:
+            if not isinstance(slot, dict):
+                continue
+            current_names = split_ref_values(slot.get("trainers") if slot.get("trainers") else slot.get("trainer"))
+            current_names = [name for name in current_names if not is_placeholder_trainer_name(name)]
+            filtered_names = unique_values([name for name in current_names if normalize_ref(name) != target])
+            if len(filtered_names) == len(current_names):
+                continue
+            touched_slots += 1
+            changed = True
+            slot["trainers"] = filtered_names
+            slot["trainer"] = " · ".join(filtered_names) if filtered_names else DEFAULT_TRAINER_NAME
+        if changed:
+            await db[COLLECTIONS["directions"]].update_one(
+                {"_id": direction["_id"]},
+                {"$set": {"schedule": schedule, "updatedAt": now_utc()}},
+            )
+    return touched_slots
+
+
+def direction_ref_targets(direction: dict[str, Any]) -> set[str]:
+    return {normalize_ref(direction.get("slug")), normalize_ref(direction.get("name"))} - {""}
+
+
+def clean_direction_refs_from_trainer(trainer: dict[str, Any], targets: set[str]) -> dict[str, Any]:
+    if not targets:
+        return {}
+    patch: dict[str, Any] = {}
+    slug_fields = ("filters", "categories", "directions")
+    label_fields = ("specializations",)
+    single_slug_fields = ("category", "direction", "sport")
+
+    for field in slug_fields + label_fields:
+        values = trainer.get(field)
+        if not isinstance(values, list):
+            continue
+        cleaned = unique_values([str(value).strip() for value in values if normalize_ref(value) not in targets])
+        if cleaned != values:
+            patch[field] = cleaned
+
+    remaining_filters = patch.get("filters", trainer.get("filters") if isinstance(trainer.get("filters"), list) else [])
+    for field in single_slug_fields:
+        if normalize_ref(trainer.get(field)) in targets:
+            patch[field] = remaining_filters[0] if remaining_filters else ""
+
+    if trainer.get("specialization"):
+        parts = split_ref_values(trainer.get("specialization"))
+        cleaned_parts = unique_values([part for part in parts if normalize_ref(part) not in targets])
+        if cleaned_parts != parts:
+            patch["specialization"] = " / ".join(cleaned_parts)
+
+    return patch
+
+
+def replace_direction_refs_in_trainer(
+    trainer: dict[str, Any],
+    old_direction: dict[str, Any],
+    new_direction: dict[str, Any],
+) -> dict[str, Any]:
+    targets = direction_ref_targets(old_direction)
+    if not targets:
+        return {}
+    new_slug = str(new_direction.get("slug") or old_direction.get("slug") or "").strip()
+    new_name = str(new_direction.get("name") or old_direction.get("name") or "").strip()
+    patch: dict[str, Any] = {}
+
+    for field in ("filters", "categories", "directions"):
+        values = trainer.get(field)
+        if isinstance(values, list):
+            replaced = unique_values([new_slug if normalize_ref(value) in targets else str(value).strip() for value in values if str(value).strip()])
+            if replaced != values:
+                patch[field] = replaced
+
+    values = trainer.get("specializations")
+    if isinstance(values, list):
+        replaced = unique_values([new_name if normalize_ref(value) in targets else str(value).strip() for value in values if str(value).strip()])
+        if replaced != values:
+            patch["specializations"] = replaced
+
+    for field in ("category", "direction", "sport"):
+        if normalize_ref(trainer.get(field)) in targets:
+            patch[field] = new_slug
+
+    if trainer.get("specialization"):
+        parts = split_ref_values(trainer.get("specialization"))
+        replaced_parts = unique_values([new_name if normalize_ref(part) in targets else part for part in parts])
+        if replaced_parts != parts:
+            patch["specialization"] = " / ".join(replaced_parts)
+
+    return patch
+
+
+async def apply_trainer_reference_patches(build_patch) -> int:
+    updated = 0
+    cursor = db[COLLECTIONS["trainers"]].find({})
+    async for trainer in cursor:
+        patch = build_patch(trainer)
+        if not patch:
+            continue
+        patch["updatedAt"] = now_utc()
+        await db[COLLECTIONS["trainers"]].update_one({"_id": trainer["_id"]}, {"$set": patch})
+        updated += 1
+    return updated
+
+
 @app.on_event("startup")
 async def startup():
     global client, db
@@ -251,17 +417,31 @@ async def get_trainer(trainer_id: str):
 
 @app.post("/api/trainers")
 async def add_trainer(data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await create_item(COLLECTIONS["trainers"], data)
+    return await create_item(COLLECTIONS["trainers"], clean_trainer_payload(data))
 
 
 @app.put("/api/trainers/{trainer_id}")
 async def edit_trainer(trainer_id: str, data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await update_item(COLLECTIONS["trainers"], trainer_id, data, "Тренер не найден")
+    data = clean_trainer_payload(data)
+    data.pop("_id", None)
+    data["updatedAt"] = now_utc()
+    item = await db[COLLECTIONS["trainers"]].find_one_and_update(
+        {"_id": oid_or_404(trainer_id)},
+        {"$set": data, "$unset": {"quote": ""}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail={"message": "Тренер не найден"})
+    return serialize(item)
 
 
 @app.delete("/api/trainers/{trainer_id}")
 async def remove_trainer(trainer_id: str, admin=Depends(get_current_admin)):
-    return await delete_item(COLLECTIONS["trainers"], trainer_id, "Тренер удалён", "Тренер не найден")
+    item = await db[COLLECTIONS["trainers"]].find_one_and_delete({"_id": oid_or_404(trainer_id)})
+    if not item:
+        raise HTTPException(status_code=404, detail={"message": "Тренер не найден"})
+    touched_slots = await remove_trainer_from_direction_schedules(item.get("name", ""))
+    return {"message": "Тренер удалён", "scheduleSlotsUpdated": touched_slots}
 
 
 @app.get("/api/directions")
@@ -280,17 +460,38 @@ async def get_direction(slug: str):
 
 @app.post("/api/directions")
 async def add_direction(data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await create_item(COLLECTIONS["directions"], data)
+    return await create_item(COLLECTIONS["directions"], clean_direction_payload(data))
 
 
 @app.put("/api/directions/{direction_id}")
 async def edit_direction(direction_id: str, data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await update_item(COLLECTIONS["directions"], direction_id, data, "Направление не найдено")
+    direction_oid = oid_or_404(direction_id)
+    old_item = await db[COLLECTIONS["directions"]].find_one({"_id": direction_oid})
+    if not old_item:
+        raise HTTPException(status_code=404, detail={"message": "Направление не найдено"})
+    data = clean_direction_payload(data)
+    data.pop("_id", None)
+    data["updatedAt"] = now_utc()
+    item = await db[COLLECTIONS["directions"]].find_one_and_update(
+        {"_id": direction_oid},
+        {"$set": data, "$unset": {"homeTrainerLimit": "", "trainerLimit": ""}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if item and (
+        normalize_ref(old_item.get("slug")) != normalize_ref(item.get("slug"))
+        or normalize_ref(old_item.get("name")) != normalize_ref(item.get("name"))
+    ):
+        await apply_trainer_reference_patches(lambda trainer: replace_direction_refs_in_trainer(trainer, old_item, item))
+    return serialize(item)
 
 
 @app.delete("/api/directions/{direction_id}")
 async def remove_direction(direction_id: str, admin=Depends(get_current_admin)):
-    return await delete_item(COLLECTIONS["directions"], direction_id, "Направление удалено", "Направление не найдено")
+    item = await db[COLLECTIONS["directions"]].find_one_and_delete({"_id": oid_or_404(direction_id)})
+    if not item:
+        raise HTTPException(status_code=404, detail={"message": "Направление не найдено"})
+    updated_trainers = await apply_trainer_reference_patches(lambda trainer: clean_direction_refs_from_trainer(trainer, direction_ref_targets(item)))
+    return {"message": "Направление удалено", "trainersUpdated": updated_trainers}
 
 
 @app.get("/api/pricing")
@@ -301,12 +502,12 @@ async def get_pricing(includeInactive: bool = False):
 
 @app.post("/api/pricing")
 async def add_pricing(data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await create_item(COLLECTIONS["pricing"], data)
+    return await create_item(COLLECTIONS["pricing"], clean_pricing_payload(data))
 
 
 @app.put("/api/pricing/{pricing_id}")
 async def edit_pricing(pricing_id: str, data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await update_item(COLLECTIONS["pricing"], pricing_id, data, "Тариф не найден")
+    return await update_item(COLLECTIONS["pricing"], pricing_id, clean_pricing_payload(data), "Тариф не найден")
 
 
 @app.delete("/api/pricing/{pricing_id}")
