@@ -6223,174 +6223,13 @@
       box-shadow: 0 0 0 4px rgba(255, 212, 0, .18);
     }
 
-    body.contact-direction-sheet-open {
-      overflow: hidden;
-    }
-
-    .contact-direction-sheet-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 1140;
-      background: rgba(17, 17, 17, .38);
-      backdrop-filter: blur(7px);
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-      transition: opacity 240ms var(--premium-ease-standard), visibility 240ms var(--premium-ease-standard);
-    }
-
-    .contact-direction-sheet {
-      position: fixed;
-      right: max(12px, env(safe-area-inset-right));
-      bottom: max(12px, env(safe-area-inset-bottom));
-      left: max(12px, env(safe-area-inset-left));
-      z-index: 1150;
-      max-height: min(78svh, 560px);
-      overflow: hidden;
-      padding: 10px 14px 14px;
-      border: 1px solid rgba(17, 17, 17, .12);
-      border-radius: 22px;
-      background:
-        linear-gradient(180deg, rgba(255, 252, 244, .99), rgba(255, 248, 230, .98));
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .78),
-        0 24px 70px rgba(17, 17, 17, .28);
-      opacity: 0;
-      transform: translateY(105%);
-      pointer-events: none;
-      visibility: hidden;
-      transition:
-        opacity 240ms var(--premium-ease-standard),
-        transform 300ms var(--premium-ease),
-        visibility 240ms var(--premium-ease-standard);
-    }
-
-    .contact-direction-sheet.active,
-    .contact-direction-sheet-backdrop.active {
-      opacity: 1;
-      pointer-events: auto;
-      visibility: visible;
-    }
-
-    .contact-direction-sheet.active {
-      transform: translateY(0);
-    }
-
-    .contact-direction-sheet-handle {
-      width: 42px;
-      height: 4px;
-      margin: 0 auto 14px;
-      border-radius: 999px;
-      background: rgba(17, 17, 17, .18);
-    }
-
-    .contact-direction-sheet-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid rgba(17, 17, 17, .09);
-    }
-
-    .contact-direction-sheet-head h2 {
-      margin: 0;
-      color: var(--premium-ink);
-      font-family: var(--display-font);
-      font-size: 28px;
-      line-height: .95;
-      letter-spacing: 0;
-      text-transform: uppercase;
-    }
-
-    .contact-direction-sheet-close {
-      width: 42px;
-      height: 42px;
-      flex: 0 0 auto;
-      display: inline-grid;
-      place-items: center;
-      border: 1px solid rgba(17, 17, 17, .12);
-      border-radius: 50%;
-      background: #fff;
-      color: var(--premium-ink);
-      cursor: pointer;
-    }
-
-    .contact-direction-sheet-list {
-      max-height: min(56svh, 390px);
-      overflow: auto;
-      display: grid;
-      gap: 8px;
-      padding: 14px 0 2px;
-    }
-
-    .contact-direction-sheet-option {
-      width: 100%;
-      min-height: 54px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 0 14px;
-      border: 1px solid rgba(17, 17, 17, .1);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, .72);
-      color: rgba(17, 17, 17, .78);
-      font: inherit;
-      font-weight: 760;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .contact-direction-sheet-option span {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .contact-direction-sheet-option i {
-      width: 24px;
-      height: 24px;
-      flex: 0 0 auto;
-      display: inline-grid;
-      place-items: center;
-      border-radius: 50%;
-      background: rgba(17, 17, 17, .08);
-      color: transparent;
-    }
-
-    .contact-direction-sheet-option.active {
-      border-color: rgba(17, 17, 17, .24);
-      background: var(--premium-ink);
-      color: #fff;
-    }
-
-    .contact-direction-sheet-option.active i {
-      background: var(--premium-yellow);
-      color: var(--premium-ink);
-    }
-
     @media(max-width:720px) {
       .field--premium-select.is-open {
         z-index: 3;
       }
 
-      .premium-direction-select.is-open .premium-direction-menu {
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(-6px) scale(.985);
-      }
-
       .contact-time-options {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media(min-width:721px) {
-      .contact-direction-sheet,
-      .contact-direction-sheet-backdrop {
-        display: none !important;
       }
     }
 
@@ -6637,232 +6476,6 @@
       display: none !important;
     }
 
-    body.schedule-filter-sheet-open {
-      overflow: hidden;
-    }
-
-    .schedule-mobile-filter-trigger {
-      display: none;
-      width: 100%;
-      min-height: 60px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin: -2px 0 18px;
-      padding: 11px 15px;
-      border: 1px solid rgba(17, 17, 17, .14);
-      border-radius: 9px;
-      background: rgba(255, 255, 255, .82);
-      color: var(--premium-ink);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .82),
-        0 16px 36px rgba(28, 25, 18, .08);
-      text-align: left;
-      transition:
-        border-color 220ms var(--premium-ease-standard),
-        box-shadow 260ms var(--premium-ease),
-        transform 260ms var(--premium-ease);
-    }
-
-    .schedule-mobile-filter-trigger span {
-      min-width: 0;
-      display: grid;
-      gap: 4px;
-    }
-
-    .schedule-mobile-filter-trigger small {
-      color: var(--premium-muted);
-      font-size: 11px;
-      font-weight: 780;
-      letter-spacing: .08em;
-      line-height: 1;
-      text-transform: uppercase;
-    }
-
-    .schedule-mobile-filter-trigger strong {
-      display: block;
-      max-width: 100%;
-      overflow: hidden;
-      color: var(--premium-ink);
-      font-size: 16px;
-      font-weight: 860;
-      letter-spacing: 0;
-      line-height: 1.1;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .schedule-mobile-filter-trigger i {
-      flex: 0 0 auto;
-      width: 34px;
-      height: 34px;
-      display: inline-grid;
-      place-items: center;
-      border: 1px solid rgba(17, 17, 17, .1);
-      border-radius: 50%;
-      background: rgba(255, 212, 0, .18);
-      color: var(--premium-ink);
-      font-size: 12px;
-    }
-
-    .schedule-mobile-filter-trigger[aria-expanded="true"] i {
-      transform: rotate(180deg);
-    }
-
-    .schedule-filter-sheet-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 1120;
-      background: rgba(17, 17, 17, .38);
-      backdrop-filter: blur(7px);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 240ms var(--premium-ease-standard), visibility 240ms var(--premium-ease-standard);
-      visibility: hidden;
-    }
-
-    .schedule-filter-sheet {
-      position: fixed;
-      right: max(12px, env(safe-area-inset-right));
-      bottom: max(12px, env(safe-area-inset-bottom));
-      left: max(12px, env(safe-area-inset-left));
-      z-index: 1130;
-      max-height: min(78svh, 560px);
-      display: block;
-      overflow: hidden;
-      padding: 10px 16px 16px;
-      border: 1px solid rgba(17, 17, 17, .13);
-      border-radius: 16px 16px 11px 11px;
-      background: #fffdf8;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .86),
-        0 28px 80px rgba(17, 17, 17, .24);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(calc(100% + 28px));
-      transition:
-        opacity 240ms var(--premium-ease-standard),
-        transform 320ms var(--premium-ease),
-        visibility 240ms var(--premium-ease-standard);
-      visibility: hidden;
-    }
-
-    .schedule-filter-sheet-handle {
-      width: 42px;
-      height: 4px;
-      margin: 0 auto 14px;
-      border-radius: 999px;
-      background: rgba(17, 17, 17, .18);
-    }
-
-    .schedule-filter-sheet-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid rgba(17, 17, 17, .09);
-    }
-
-    .schedule-filter-sheet-head .eyebrow {
-      margin-bottom: 6px;
-      color: #9a7c00;
-      font-size: 11px;
-    }
-
-    .schedule-filter-sheet-head h2 {
-      margin: 0;
-      color: var(--premium-ink);
-      font-family: var(--display-font);
-      font-size: 28px;
-      line-height: .95;
-      letter-spacing: 0;
-      text-transform: uppercase;
-    }
-
-    .schedule-filter-sheet-close {
-      width: 42px;
-      height: 42px;
-      flex: 0 0 auto;
-      display: inline-grid;
-      place-items: center;
-      border: 1px solid rgba(17, 17, 17, .12);
-      border-radius: 50%;
-      background: #fff;
-      color: var(--premium-ink);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
-    }
-
-    .schedule-filter-sheet-list {
-      max-height: min(56svh, 390px);
-      overflow: auto;
-      display: grid;
-      gap: 8px;
-      padding: 14px 0 2px;
-    }
-
-    .schedule-filter-sheet-option {
-      width: 100%;
-      min-height: 54px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 0 14px;
-      border: 1px solid rgba(17, 17, 17, .1);
-      border-radius: 9px;
-      background: rgba(255, 255, 255, .72);
-      color: var(--premium-ink);
-      font-size: 15px;
-      font-weight: 820;
-      letter-spacing: 0;
-      line-height: 1.15;
-      text-align: left;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
-      transition:
-        background-color 180ms var(--premium-ease-standard),
-        border-color 180ms var(--premium-ease-standard),
-        transform 220ms var(--premium-ease);
-    }
-
-    .schedule-filter-sheet-option span {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .schedule-filter-sheet-option i {
-      width: 24px;
-      height: 24px;
-      flex: 0 0 auto;
-      display: inline-grid;
-      place-items: center;
-      border-radius: 50%;
-      background: rgba(17, 17, 17, .08);
-      color: transparent;
-      font-size: 11px;
-    }
-
-    .schedule-filter-sheet-option.active {
-      border-color: rgba(17, 17, 17, .24);
-      background: var(--premium-ink);
-      color: #fff;
-    }
-
-    .schedule-filter-sheet-option.active i {
-      background: var(--premium-yellow);
-      color: var(--premium-ink);
-    }
-
-    @media(min-width:721px) {
-      .schedule-mobile-filter-trigger,
-      .schedule-filter-sheet-backdrop,
-      .schedule-filter-sheet {
-        display: none !important;
-      }
-    }
-
     .price-card .btn,
     .card-footer .btn {
       min-height: 48px !important;
@@ -6954,18 +6567,7 @@
       }
 
       .filter-btn--desktop {
-        display: none !important;
-      }
-
-      .filter-btn--mobile-quick,
-      .filter-more-btn {
         display: inline-flex !important;
-      }
-
-      .filter-more-btn {
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
       }
 
       #page-schedule .schedule-filters,
@@ -6992,25 +6594,13 @@
         color: #fff !important;
       }
 
-      .filter-more-btn i {
-        font-size: 11px;
-      }
-
-      .schedule-mobile-filter-trigger {
+      .filter-btn--mobile-quick,
+      .filter-more-btn {
         display: none !important;
       }
 
-      .schedule-filter-sheet-backdrop.active {
-        opacity: 1;
-        pointer-events: auto;
-        visibility: visible;
-      }
-
-      .schedule-filter-sheet.active {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-        visibility: visible;
+      .filter-more-btn i {
+        font-size: 11px;
       }
 
       .price-card .btn,
@@ -7320,45 +6910,85 @@
 
     /* Mobile bottom sheets: navigation and filters share one gesture model */
     @media(max-width:720px) {
-      .drawer-backdrop {
-        top: 0 !important;
-        z-index: 1190 !important;
-        background: rgba(17, 17, 17, .38) !important;
-        backdrop-filter: blur(7px) !important;
+      html.sheet-open,
+      body.sheet-open {
+        overflow: hidden !important;
+        overscroll-behavior: none;
       }
 
-      .drawer {
-        inset: auto max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+      .sheet-backdrop {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        z-index: 1300 !important;
+        background: rgba(17, 17, 17, .38) !important;
+        -webkit-backdrop-filter: blur(7px) !important;
+        backdrop-filter: blur(7px) !important;
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+        transition: opacity 300ms var(--premium-ease-standard), visibility 300ms var(--premium-ease-standard);
+        touch-action: none;
+        overscroll-behavior: contain;
+      }
+
+      .sheet-backdrop.is-active,
+      .sheet-backdrop.active {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+      }
+
+      .bottom-sheet {
+        position: fixed !important;
+        top: auto !important;
+        right: max(12px, env(safe-area-inset-right)) !important;
+        bottom: 0 !important;
+        left: max(12px, env(safe-area-inset-left)) !important;
+        z-index: 1301 !important;
+        display: flex !important;
+        flex-direction: column;
         width: auto !important;
-        max-height: min(78svh, 560px) !important;
-        padding: 10px 16px 16px !important;
+        height: auto !important;
+        max-height: 70% !important;
+        padding: 10px 16px max(16px, env(safe-area-inset-bottom)) !important;
         border: 1px solid rgba(17, 17, 17, .13) !important;
-        border-radius: 16px 16px 11px 11px !important;
+        border-radius: 16px 16px 0 0 !important;
         background: #fffdf8 !important;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .86), 0 28px 80px rgba(17, 17, 17, .24) !important;
         overflow: hidden auto !important;
         opacity: 0 !important;
         pointer-events: none !important;
         visibility: hidden !important;
-        transform: translateY(calc(100% + 28px)) !important;
-        transition: opacity 240ms var(--premium-ease-standard), transform 320ms var(--premium-ease), visibility 240ms var(--premium-ease-standard) !important;
+        transform: translateY(100%) !important;
+        transition:
+          opacity 240ms var(--premium-ease-standard),
+          transform 400ms cubic-bezier(0.16, 1, 0.3, 1),
+          visibility 240ms var(--premium-ease-standard) !important;
+        touch-action: pan-y;
+        overscroll-behavior: contain;
+        will-change: transform;
       }
 
-      .drawer::before {
-        content: '';
-        display: block;
-        width: 42px;
-        height: 4px;
-        margin: 0 auto 14px;
-        border-radius: 999px;
-        background: rgba(17, 17, 17, .18);
-      }
-
-      .drawer.active {
+      .bottom-sheet.is-active,
+      .bottom-sheet.active {
         opacity: 1 !important;
         pointer-events: auto !important;
         visibility: visible !important;
         transform: translateY(0) !important;
+      }
+
+      .drawer::before,
+      .sheet-drag-handle {
+        content: '';
+        display: block;
+        width: 40px !important;
+        height: 4px;
+        flex: 0 0 auto;
+        margin: 0 auto 14px !important;
+        border-radius: 4px;
+        background: rgba(17, 17, 17, .18) !important;
       }
 
       .drawer ul {
@@ -7374,22 +7004,17 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
       }
 
-      .schedule-filter-sheet {
-        touch-action: pan-y;
+      .sheet-content {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
       }
 
-      .drawer.is-dragging,
-      .schedule-filter-sheet.is-dragging {
+      .drawer.is-dragging {
         transition: none !important;
       }
 
-      .schedule-filter-sheet-head {
-        justify-content: flex-start !important;
-      }
-
-      .schedule-filter-sheet-close {
-        display: none !important;
-      }
     }
 
     @media(prefers-reduced-motion:reduce) {
@@ -7424,8 +7049,8 @@
           aria-expanded="false" aria-controls="drawer"><i class="fas fa-bars"></i></button></div>
     </div>
   </header>
-  <div class="drawer-backdrop" id="drawerBackdrop"></div>
-  <aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-backdrop sheet-backdrop" id="drawerBackdrop"></div>
+  <aside class="drawer bottom-sheet" id="drawer" aria-hidden="true">
     <ul>
       <li><a href="/" data-page="home">Главная <i class="fas fa-chevron-right"></i></a></li>
       <li><a href="/schedule" data-page="schedule">Расписание <i class="fas fa-chevron-right"></i></a></li>
@@ -7691,27 +7316,6 @@
           <div class="filters schedule-filters" id="scheduleFilters" aria-label="Фильтр расписания по направлениям">
             <button class="filter-btn active" data-schedule-filter="all">Все</button>
           </div>
-          <button class="schedule-mobile-filter-trigger" type="button" data-schedule-filter-open
-            aria-haspopup="dialog" aria-expanded="false" aria-controls="scheduleFilterSheet">
-            <span>
-              <small>Направление</small>
-              <strong data-schedule-filter-label>Все направления</strong>
-            </span>
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-          </button>
-          <div class="schedule-filter-sheet-backdrop" data-schedule-filter-close aria-hidden="true"></div>
-          <div class="schedule-filter-sheet" id="scheduleFilterSheet" role="dialog" aria-modal="true"
-            aria-labelledby="scheduleFilterSheetTitle" aria-hidden="true">
-            <div class="schedule-filter-sheet-handle" aria-hidden="true"></div>
-            <div class="schedule-filter-sheet-head">
-              <div>
-                <div class="eyebrow">Фильтр</div>
-                <h2 id="scheduleFilterSheetTitle">Направление</h2>
-              </div>
-            </div>
-            <div class="schedule-filter-sheet-list" data-schedule-filter-sheet-list role="listbox"
-              aria-label="Направление для расписания"></div>
-          </div>
           <div id="schedule-board"></div>
         </div>
       </div>
@@ -7727,20 +7331,6 @@
             </div>
           </div>
           <div class="filters" id="trainerFilters"><button class="filter-btn active" data-filter="all">Все</button>
-          </div>
-          <div class="schedule-filter-sheet-backdrop trainer-filter-sheet-backdrop" data-trainer-filter-close
-            aria-hidden="true"></div>
-          <div class="schedule-filter-sheet trainer-filter-sheet" id="trainerFilterSheet" role="dialog"
-            aria-modal="true" aria-labelledby="trainerFilterSheetTitle" aria-hidden="true">
-            <div class="schedule-filter-sheet-handle" aria-hidden="true"></div>
-            <div class="schedule-filter-sheet-head">
-              <div>
-                <div class="eyebrow">Фильтр</div>
-                <h2 id="trainerFilterSheetTitle">Направление</h2>
-              </div>
-            </div>
-            <div class="schedule-filter-sheet-list" data-trainer-filter-sheet-list role="listbox"
-              aria-label="Направление тренера"></div>
           </div>
           <div class="grid grid-3" id="trainers-grid"></div>
         </div>
@@ -7964,7 +7554,7 @@
       }
     })();
   </script>
-  <script src="/js/main.js?v=20260520-home-faq"></script>
+  <script src="/js/main.js?v=20260521-sheet-system"></script>
 </body>
 
 </html>

@@ -21,9 +21,6 @@ const DAY_ALIASES = {
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 let premiumSelectDocumentBound = false;
-let scheduleFilterFocusTarget = null;
-let trainerFilterFocusTarget = null;
-let activeContactDirectionSelect = null;
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -241,13 +238,15 @@ function bindNavigation() {
 
 function openDrawer() {
   const drawer = $('#drawer');
+  const backdrop = $('#drawerBackdrop');
+  placeBottomSheetInBody(drawer, backdrop);
   drawer?.style.removeProperty('transform');
-  drawer?.classList.add('active');
-  $('#drawerBackdrop')?.classList.add('active');
+  drawer?.classList.add('active', 'is-active');
+  backdrop?.classList.add('active', 'is-active');
   drawer?.setAttribute('aria-hidden', 'false');
   $('#openDrawer')?.setAttribute('aria-expanded', 'true');
   $('#openDrawer')?.setAttribute('aria-label', 'Закрыть меню');
-  document.body.style.overflow = 'hidden';
+  lockBottomSheetScroll('drawer');
 }
 function toggleDrawer() {
   if ($('#drawer')?.classList.contains('active')) {
@@ -258,13 +257,14 @@ function toggleDrawer() {
 }
 function closeDrawer() {
   const drawer = $('#drawer');
-  drawer?.classList.remove('active', 'is-dragging');
+  const wasOpen = drawer?.classList.contains('active') || drawer?.classList.contains('is-active');
+  drawer?.classList.remove('active', 'is-active', 'is-dragging');
   drawer?.style.removeProperty('transform');
-  $('#drawerBackdrop')?.classList.remove('active');
+  $('#drawerBackdrop')?.classList.remove('active', 'is-active');
   drawer?.setAttribute('aria-hidden', 'true');
   $('#openDrawer')?.setAttribute('aria-expanded', 'false');
   $('#openDrawer')?.setAttribute('aria-label', 'Меню');
-  document.body.style.overflow = '';
+  if (wasOpen) unlockBottomSheetScroll('drawer');
 }
 
 function setTrainerFilter(filter = 'all') {
@@ -275,11 +275,6 @@ function setTrainerFilter(filter = 'all') {
     option.classList.toggle('active', active);
     option.setAttribute('aria-selected', active ? 'true' : 'false');
   });
-  const quickHasActive = !!$('#trainerFilters .filter-btn[data-filter]:not(.filter-btn--desktop).active');
-  $$('#trainerFilters [data-trainer-filter-label]').forEach(label => {
-    label.textContent = 'Еще';
-  });
-  $$('#trainerFilters [data-trainer-filter-open]').forEach(btn => btn.classList.toggle('active', state.trainerFilter !== 'all' && !quickHasActive));
 }
 
 function trainerFilterLabel(filter = state.trainerFilter) {
@@ -313,11 +308,6 @@ function setScheduleFilter(filter = 'all') {
   $$('[data-schedule-filter-label]').forEach(label => {
     label.textContent = scheduleFilterLabel(state.scheduleFilter);
   });
-  const quickHasActive = !!$('#scheduleFilters .filter-btn[data-schedule-filter]:not(.filter-btn--desktop).active');
-  $$('#scheduleFilters [data-schedule-filter-label]').forEach(label => {
-    label.textContent = 'Еще';
-  });
-  $$('#scheduleFilters [data-schedule-filter-open]').forEach(btn => btn.classList.toggle('active', state.scheduleFilter !== 'all' && !quickHasActive));
 }
 
 function applyScheduleFilter(filter = 'all', { push = true } = {}) {
@@ -330,70 +320,76 @@ function applyScheduleFilter(filter = 'all', { push = true } = {}) {
   }
 }
 
-function openScheduleFilterSheet() {
-  const sheet = $('#scheduleFilterSheet');
-  const backdrop = $('.schedule-filter-sheet-backdrop');
-  const trigger = $('[data-schedule-filter-open]');
-  if (!sheet || !trigger) return;
-  scheduleFilterFocusTarget = trigger;
-  sheet.style.removeProperty('transform');
-  sheet.classList.add('active');
-  backdrop?.classList.add('active');
-  sheet.setAttribute('aria-hidden', 'false');
-  trigger.setAttribute('aria-expanded', 'true');
-  document.body.classList.add('schedule-filter-sheet-open');
-  const selectedOption = $('[data-schedule-filter-option].active', sheet) || $('[data-schedule-filter-option]', sheet);
-  requestAnimationFrame(() => selectedOption?.focus({ preventScroll: true }));
+const bottomSheetLocks = new Set();
+let bottomSheetScrollY = 0;
+let bottomSheetBodyStyles = null;
+let bottomSheetRootStyles = null;
+let bottomSheetGuardsBound = false;
+
+function preventBackgroundSheetScroll(event) {
+  if (event.target?.closest?.('.bottom-sheet.active, .bottom-sheet.is-active')) return;
+  event.preventDefault();
 }
 
-function closeScheduleFilterSheet({ restoreFocus = true } = {}) {
-  const sheet = $('#scheduleFilterSheet');
-  const backdrop = $('.schedule-filter-sheet-backdrop');
-  const trigger = $('[data-schedule-filter-open]');
-  const wasOpen = sheet?.classList.contains('active');
-  sheet?.classList.remove('active', 'is-dragging');
-  sheet?.style.removeProperty('transform');
-  backdrop?.classList.remove('active');
-  sheet?.setAttribute('aria-hidden', 'true');
-  trigger?.setAttribute('aria-expanded', 'false');
-  document.body.classList.remove('schedule-filter-sheet-open');
-  if (restoreFocus && wasOpen) {
-    (scheduleFilterFocusTarget || trigger)?.focus({ preventScroll: true });
+function bindBottomSheetScrollGuards() {
+  if (bottomSheetGuardsBound) return;
+  document.addEventListener('touchmove', preventBackgroundSheetScroll, { capture: true, passive: false });
+  document.addEventListener('wheel', preventBackgroundSheetScroll, { capture: true, passive: false });
+  bottomSheetGuardsBound = true;
+}
+
+function unbindBottomSheetScrollGuards() {
+  if (!bottomSheetGuardsBound) return;
+  document.removeEventListener('touchmove', preventBackgroundSheetScroll, { capture: true });
+  document.removeEventListener('wheel', preventBackgroundSheetScroll, { capture: true });
+  bottomSheetGuardsBound = false;
+}
+
+function lockBottomSheetScroll(key = 'sheet') {
+  if (!bottomSheetLocks.size) {
+    bottomSheetScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    bottomSheetRootStyles = {
+      overflow: document.documentElement.style.overflow,
+      overscrollBehavior: document.documentElement.style.overscrollBehavior
+    };
+    bottomSheetBodyStyles = {
+      overflow: document.body.style.overflow,
+      overscrollBehavior: document.body.style.overscrollBehavior
+    };
+    document.body.classList.add('sheet-open');
+    document.documentElement.classList.add('sheet-open');
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'none';
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+    bindBottomSheetScrollGuards();
   }
-  scheduleFilterFocusTarget = null;
+  bottomSheetLocks.add(key);
 }
 
-function openTrainerFilterSheet() {
-  const sheet = $('#trainerFilterSheet');
-  const backdrop = $('.trainer-filter-sheet-backdrop');
-  const trigger = $('[data-trainer-filter-open]');
-  if (!sheet || !trigger) return;
-  trainerFilterFocusTarget = trigger;
-  sheet.style.removeProperty('transform');
-  sheet.classList.add('active');
-  backdrop?.classList.add('active');
-  sheet.setAttribute('aria-hidden', 'false');
-  trigger.setAttribute('aria-expanded', 'true');
-  document.body.classList.add('schedule-filter-sheet-open');
-  const selectedOption = $('[data-trainer-filter-option].active', sheet) || $('[data-trainer-filter-option]', sheet);
-  requestAnimationFrame(() => selectedOption?.focus({ preventScroll: true }));
-}
-
-function closeTrainerFilterSheet({ restoreFocus = true } = {}) {
-  const sheet = $('#trainerFilterSheet');
-  const backdrop = $('.trainer-filter-sheet-backdrop');
-  const trigger = $('[data-trainer-filter-open]');
-  const wasOpen = sheet?.classList.contains('active');
-  sheet?.classList.remove('active', 'is-dragging');
-  sheet?.style.removeProperty('transform');
-  backdrop?.classList.remove('active');
-  sheet?.setAttribute('aria-hidden', 'true');
-  trigger?.setAttribute('aria-expanded', 'false');
-  document.body.classList.remove('schedule-filter-sheet-open');
-  if (restoreFocus && wasOpen) {
-    (trainerFilterFocusTarget || trigger)?.focus({ preventScroll: true });
+function unlockBottomSheetScroll(key = 'sheet') {
+  bottomSheetLocks.delete(key);
+  if (bottomSheetLocks.size) return;
+  const restoreY = bottomSheetScrollY;
+  document.body.classList.remove('sheet-open');
+  document.documentElement.classList.remove('sheet-open');
+  unbindBottomSheetScrollGuards();
+  if (bottomSheetRootStyles) {
+    document.documentElement.style.overflow = bottomSheetRootStyles.overflow;
+    document.documentElement.style.overscrollBehavior = bottomSheetRootStyles.overscrollBehavior;
   }
-  trainerFilterFocusTarget = null;
+  if (bottomSheetBodyStyles) {
+    document.body.style.overflow = bottomSheetBodyStyles.overflow;
+    document.body.style.overscrollBehavior = bottomSheetBodyStyles.overscrollBehavior;
+  }
+  bottomSheetRootStyles = null;
+  bottomSheetBodyStyles = null;
+  window.scrollTo(0, restoreY);
+}
+
+function placeBottomSheetInBody(sheet, backdrop) {
+  if (backdrop && backdrop.parentElement !== document.body) document.body.appendChild(backdrop);
+  if (sheet && sheet.parentElement !== document.body) document.body.appendChild(sheet);
 }
 
 function bindSwipeToClose(sheet, closeFn) {
@@ -405,7 +401,7 @@ function bindSwipeToClose(sheet, closeFn) {
   let touchActive = false;
 
   const canStartSwipe = target => {
-    const scrollArea = target?.closest?.('.schedule-filter-sheet-list');
+    const scrollArea = target?.closest?.('.bottom-sheet');
     return !scrollArea || scrollArea.scrollTop <= 0;
   };
 
@@ -432,7 +428,7 @@ function bindSwipeToClose(sheet, closeFn) {
 
   sheet.addEventListener('pointerdown', event => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
-    if (!sheet.classList.contains('active')) return;
+    if (!sheet.classList.contains('active') && !sheet.classList.contains('is-active')) return;
     if (!canStartSwipe(event.target)) return;
     pointerId = event.pointerId;
     beginDrag(event.clientY);
@@ -455,7 +451,7 @@ function bindSwipeToClose(sheet, closeFn) {
   sheet.addEventListener('pointercancel', finish);
 
   sheet.addEventListener('touchstart', event => {
-    if (!sheet.classList.contains('active')) return;
+    if (!sheet.classList.contains('active') && !sheet.classList.contains('is-active')) return;
     if (!canStartSwipe(event.target)) return;
     const touch = event.touches[0];
     if (!touch) return;
@@ -947,7 +943,6 @@ function filterButtonHtml({ value, label, type, extraClass = '' }) {
 
 function renderTrainerFilterButtons() {
   const wrap = $('#trainerFilters');
-  const sheetList = $('[data-trainer-filter-sheet-list]');
   if (!wrap) return;
 
   const options = new Map();
@@ -966,21 +961,9 @@ function renderTrainerFilterButtons() {
   }
 
   const entries = sortFilterEntries([...options.entries()]);
-  const quickEntries = entries.slice(0, 2);
-  const remainingEntries = entries.slice(2);
-
   wrap.innerHTML =
     filterButtonHtml({ value: 'all', label: 'Все', type: 'trainer' }) +
-    entries.map(([value, label]) => filterButtonHtml({ value, label, type: 'trainer', extraClass: 'filter-btn--desktop' })).join('') +
-    quickEntries.map(([value, label]) => filterButtonHtml({ value, label, type: 'trainer', extraClass: 'filter-btn--mobile-quick' })).join('') +
-    (remainingEntries.length ? `<button class="filter-btn filter-more-btn" type="button" data-trainer-filter-open aria-haspopup="dialog" aria-expanded="false" aria-controls="trainerFilterSheet"><span data-trainer-filter-label>Еще</span><i class="fas fa-chevron-down" aria-hidden="true"></i></button>` : '');
-
-  if (sheetList) {
-    sheetList.innerHTML = remainingEntries
-      .map(([value, label]) => `<button class="schedule-filter-sheet-option" type="button" role="option" data-trainer-filter-option="${escapeHtml(value)}" aria-selected="false"><span>${escapeHtml(label)}</span><i class="fas fa-check" aria-hidden="true"></i></button>`)
-      .join('');
-    markDecorativeIcons(sheetList);
-  }
+    entries.map(([value, label]) => filterButtonHtml({ value, label, type: 'trainer' })).join('');
 
   setTrainerFilter(state.trainerFilter);
   markDecorativeIcons(wrap);
@@ -988,8 +971,7 @@ function renderTrainerFilterButtons() {
 
 function renderScheduleFilterButtons() {
   const wrap = $('#scheduleFilters');
-  const sheetList = $('[data-schedule-filter-sheet-list]');
-  if (!wrap && !sheetList) return;
+  if (!wrap) return;
 
   const options = new Map();
   state.directions
@@ -1004,23 +986,11 @@ function renderScheduleFilterButtons() {
   }
 
   const entries = sortFilterEntries([...options.entries()]);
-  const quickEntries = entries.slice(0, 2);
-  const remainingEntries = entries.slice(2);
-
   if (wrap) {
     wrap.innerHTML =
       filterButtonHtml({ value: 'all', label: 'Все', type: 'schedule' }) +
-      entries.map(([value, label]) => filterButtonHtml({ value, label, type: 'schedule', extraClass: 'filter-btn--desktop' })).join('') +
-      quickEntries.map(([value, label]) => filterButtonHtml({ value, label, type: 'schedule', extraClass: 'filter-btn--mobile-quick' })).join('') +
-      (remainingEntries.length ? `<button class="filter-btn filter-more-btn" type="button" data-schedule-filter-open aria-haspopup="dialog" aria-expanded="false" aria-controls="scheduleFilterSheet"><span data-schedule-filter-label>Еще</span><i class="fas fa-chevron-down" aria-hidden="true"></i></button>` : '');
+      entries.map(([value, label]) => filterButtonHtml({ value, label, type: 'schedule' })).join('');
     markDecorativeIcons(wrap);
-  }
-
-  if (sheetList) {
-    sheetList.innerHTML = remainingEntries
-        .map(([value, label]) => `<button class="schedule-filter-sheet-option" type="button" role="option" data-schedule-filter-option="${escapeHtml(value)}" aria-selected="false"><span>${escapeHtml(label)}</span><i class="fas fa-check" aria-hidden="true"></i></button>`)
-        .join('');
-    markDecorativeIcons(sheetList);
   }
 
   setScheduleFilter(state.scheduleFilter);
@@ -1497,53 +1467,6 @@ function isMobileViewport() {
   return window.matchMedia('(max-width: 720px)').matches;
 }
 
-function ensureContactDirectionSheet() {
-  let sheet = $('#contactDirectionSheet');
-  if (sheet) return sheet;
-  document.body.insertAdjacentHTML('beforeend', `
-    <div class="contact-direction-sheet-backdrop" data-contact-direction-close aria-hidden="true"></div>
-    <div class="contact-direction-sheet" id="contactDirectionSheet" role="dialog" aria-modal="true" aria-labelledby="contactDirectionSheetTitle" aria-hidden="true">
-      <div class="contact-direction-sheet-handle" aria-hidden="true"></div>
-      <div class="contact-direction-sheet-head">
-        <div>
-          <div class="eyebrow">Заявка</div>
-          <h2 id="contactDirectionSheetTitle">Направление</h2>
-        </div>
-        <button class="contact-direction-sheet-close" type="button" data-contact-direction-close aria-label="Закрыть выбор направления"><i class="fas fa-xmark" aria-hidden="true"></i></button>
-      </div>
-      <div class="contact-direction-sheet-list" data-contact-direction-list role="listbox" aria-label="Направление для заявки"></div>
-    </div>`);
-  return $('#contactDirectionSheet');
-}
-
-function closeContactDirectionSheet() {
-  $('#contactDirectionSheet')?.classList.remove('active');
-  $('.contact-direction-sheet-backdrop')?.classList.remove('active');
-  $('#contactDirectionSheet')?.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('contact-direction-sheet-open');
-  activeContactDirectionSelect = null;
-}
-
-function openContactDirectionSheet(select) {
-  if (!select) return;
-  activeContactDirectionSelect = select;
-  closePremiumDirectionSelects();
-  const sheet = ensureContactDirectionSheet();
-  const list = $('[data-contact-direction-list]', sheet);
-  if (list) {
-    list.innerHTML = [...select.options].filter(option => option.value).map((option, index) => {
-      const isSelected = option.value === select.value;
-      return `<button class="contact-direction-sheet-option${isSelected ? ' active' : ''}" type="button" role="option" aria-selected="${isSelected}" data-contact-direction-value="${escapeHtml(option.value)}" data-option-index="${index}">
-        <span>${escapeHtml(option.textContent)}</span><i class="fas fa-check" aria-hidden="true"></i>
-      </button>`;
-    }).join('');
-  }
-  sheet.classList.add('active');
-  $('.contact-direction-sheet-backdrop')?.classList.add('active');
-  sheet.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('contact-direction-sheet-open');
-}
-
 function syncPremiumDirectionSelect(select) {
   const root = select.closest('.field')?.querySelector('.premium-direction-select');
   if (!root) return;
@@ -1567,11 +1490,6 @@ function enhanceDirectionSelects() {
         const root = trigger.closest('.premium-direction-select');
         const field = root?.closest('.field');
         const select = getPremiumSelect(field);
-        if (select?.classList.contains('direction-select') && isMobileViewport()) {
-          event.preventDefault();
-          openContactDirectionSheet(select);
-          return;
-        }
         const isOpen = root.classList.contains('is-open');
         closePremiumDirectionSelects(root);
         root.classList.toggle('is-open', !isOpen);
@@ -1595,27 +1513,9 @@ function enhanceDirectionSelects() {
 
       if (!event.target.closest('.premium-direction-select')) closePremiumDirectionSelects();
     });
-    document.addEventListener('click', event => {
-      const option = event.target.closest('[data-contact-direction-value]');
-      if (option) {
-        event.preventDefault();
-        if (activeContactDirectionSelect) {
-          activeContactDirectionSelect.value = option.dataset.contactDirectionValue || '';
-          activeContactDirectionSelect.dispatchEvent(new Event('change', { bubbles: true }));
-          syncPremiumDirectionSelect(activeContactDirectionSelect);
-        }
-        closeContactDirectionSheet();
-        return;
-      }
-      if (event.target.closest('[data-contact-direction-close]')) {
-        event.preventDefault();
-        closeContactDirectionSheet();
-      }
-    });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         closePremiumDirectionSelects();
-        closeContactDirectionSheet();
       }
     });
   }
@@ -1642,16 +1542,7 @@ function enhanceDirectionSelects() {
 }
 
 function bindFilters() {
-  bindSwipeToClose($('#scheduleFilterSheet'), closeScheduleFilterSheet);
-  bindSwipeToClose($('#trainerFilterSheet'), closeTrainerFilterSheet);
-
   $('#trainerFilters')?.addEventListener('click', event => {
-    const openBtn = event.target.closest('[data-trainer-filter-open]');
-    if (openBtn) {
-      event.preventDefault();
-      openTrainerFilterSheet();
-      return;
-    }
     const btn = event.target.closest('[data-filter]');
     if (!btn) return;
     setTrainerFilter(btn.dataset.filter);
@@ -1659,46 +1550,9 @@ function bindFilters() {
   });
 
   $('#scheduleFilters')?.addEventListener('click', event => {
-    const openBtn = event.target.closest('[data-schedule-filter-open]');
-    if (openBtn) {
-      event.preventDefault();
-      openScheduleFilterSheet();
-      return;
-    }
     const btn = event.target.closest('[data-schedule-filter]');
     if (!btn) return;
     applyScheduleFilter(btn.dataset.scheduleFilter);
-  });
-
-  $('[data-schedule-filter-open]')?.addEventListener('click', () => openScheduleFilterSheet());
-
-  document.addEventListener('click', event => {
-    const option = event.target.closest('[data-schedule-filter-option]');
-    if (option) {
-      event.preventDefault();
-      applyScheduleFilter(option.dataset.scheduleFilterOption);
-      closeScheduleFilterSheet();
-      return;
-    }
-
-    const trainerOption = event.target.closest('[data-trainer-filter-option]');
-    if (trainerOption) {
-      event.preventDefault();
-      setTrainerFilter(trainerOption.dataset.trainerFilterOption);
-      renderTrainers();
-      closeTrainerFilterSheet();
-      return;
-    }
-
-    if (event.target.closest('[data-schedule-filter-close]')) {
-      event.preventDefault();
-      closeScheduleFilterSheet();
-    }
-
-    if (event.target.closest('[data-trainer-filter-close]')) {
-      event.preventDefault();
-      closeTrainerFilterSheet();
-    }
   });
 }
 
