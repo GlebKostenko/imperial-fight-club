@@ -6611,6 +6611,7 @@
       line-height: 1.16 !important;
       background: rgba(255, 255, 255, .74) !important;
       border-color: rgba(17, 17, 17, .13) !important;
+      color: var(--premium-ink) !important;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, .74) !important;
     }
 
@@ -6983,6 +6984,12 @@
       #page-schedule .schedule-filters .filter-btn,
       #trainerFilters .filter-btn {
         flex: 0 0 auto;
+        color: var(--premium-ink) !important;
+      }
+
+      #page-schedule .schedule-filters .filter-btn.active,
+      #trainerFilters .filter-btn.active {
+        color: #fff !important;
       }
 
       .filter-more-btn i {
