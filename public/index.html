@@ -3554,6 +3554,11 @@
       box-shadow: 0 0 0 6px rgba(17, 17, 17, .14)
     }
 
+    :where(a, button, input, select, textarea, summary, label, [role="button"], [tabindex]) {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(255, 212, 0, .22);
+    }
+
     .btn {
       min-height: 50px;
       border-radius: 12px
@@ -7882,7 +7887,7 @@
       }
     })();
   </script>
-  <script src="/js/main.js?v=20260522-hall-fixed-photo-size"></script>
+  <script src="/js/main.js?v=20260522-mobile-touch-fix"></script>
 </body>
 
 </html>

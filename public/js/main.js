@@ -52,6 +52,7 @@ function applyPremiumStagger(scope = document) {
   if (prefersReducedMotion()) return;
   const root = scope || document;
   const isCompactViewport = window.matchMedia?.('(max-width: 720px)').matches;
+  if (isCompactViewport) return;
   const groups = [...new Set([
     '.grid',
     '.stats',
