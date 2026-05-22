@@ -37,6 +37,10 @@ function markDecorativeIcons(scope = document) {
 let cardRevealObserver = null;
 let cardRevealPage = '';
 let cardRevealTimers = [];
+let dataLoadInFlight = null;
+let lastDataLoadedAt = 0;
+let lastDataLoadFailed = false;
+const DATA_REFRESH_MAX_AGE = 5 * 60 * 1000;
 
 function resetCardReveal(scope = document) {
   if (cardRevealObserver) cardRevealObserver.disconnect();
@@ -145,7 +149,10 @@ function escapeHtml(value = '') {
 }
 
 async function apiGet(endpoint) {
-  const res = await fetch(`${API_URL}${endpoint}`);
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    cache: 'no-store',
+    headers: { 'Accept': 'application/json' }
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -1692,33 +1699,72 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove('show'), 4200);
 }
 
-async function loadData({ refreshReveal = true } = {}) {
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function loadData({ refreshReveal = true, silent = false, retries = 1 } = {}) {
+  if (dataLoadInFlight) return dataLoadInFlight;
+
+  dataLoadInFlight = (async () => {
+    let lastError = null;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        const [directions, trainers, pricing, gallery, settings] = await Promise.all([
+          apiGet('/api/directions'), apiGet('/api/trainers'), apiGet('/api/pricing'), apiGet('/api/gallery'), apiGet('/api/settings')
+        ]);
+        state.directions = Array.isArray(directions) ? directions : [];
+        state.trainers = Array.isArray(trainers) ? trainers : [];
+        state.pricing = Array.isArray(pricing) ? pricing : [];
+        state.gallery = Array.isArray(gallery) ? gallery : [];
+        state.settings = settings || {};
+        lastDataLoadedAt = Date.now();
+        lastDataLoadFailed = false;
+        const initialTrainerFilter = trainerFilterFromUrl();
+        if (resolvePageName() === 'trainers' && initialTrainerFilter) {
+          state.trainerFilter = initialTrainerFilter;
+        }
+        const initialScheduleFilter = scheduleFilterFromUrl();
+        if (resolvePageName() === 'schedule' && initialScheduleFilter) {
+          state.scheduleFilter = initialScheduleFilter;
+        }
+        render({ refreshReveal });
+        return true;
+      } catch (error) {
+        lastError = error;
+        if (attempt < retries) await delay(900 * (attempt + 1));
+      }
+    }
+
+    lastDataLoadFailed = true;
+    console.warn('Site data load failed', lastError);
+    if (!silent) showToast('Ошибка загрузки данных сайта. Проверьте API.');
+    return false;
+  })();
+
   try {
-    const [directions, trainers, pricing, gallery, settings] = await Promise.all([
-      apiGet('/api/directions'), apiGet('/api/trainers'), apiGet('/api/pricing'), apiGet('/api/gallery'), apiGet('/api/settings')
-    ]);
-    state.directions = directions;
-    state.trainers = trainers;
-    state.pricing = pricing;
-    state.gallery = gallery;
-    state.settings = settings || {};
-    const initialTrainerFilter = trainerFilterFromUrl();
-    if (resolvePageName() === 'trainers' && initialTrainerFilter) {
-      state.trainerFilter = initialTrainerFilter;
-    }
-    const initialScheduleFilter = scheduleFilterFromUrl();
-    if (resolvePageName() === 'schedule' && initialScheduleFilter) {
-      state.scheduleFilter = initialScheduleFilter;
-    }
-    render({ refreshReveal });
-  } catch (error) {
-    showToast('Ошибка загрузки данных сайта. Проверьте API.');
+    return await dataLoadInFlight;
+  } finally {
+    dataLoadInFlight = null;
   }
 }
 
 function bindFocusRefresh() {
-  // Keep reveal animations stable when the user switches browser tabs.
-  // Data refresh happens on page load/reload; focus alone should not rebuild cards.
+  const refreshIfStale = (force = false) => {
+    if (document.visibilityState === 'hidden') return;
+    const hasCoreData = state.directions.length > 0 && state.trainers.length > 0;
+    const isStale = !lastDataLoadedAt || Date.now() - lastDataLoadedAt > DATA_REFRESH_MAX_AGE;
+    if (force || isStale || lastDataLoadFailed || !hasCoreData) {
+      loadData({ refreshReveal: false, silent: true, retries: 2 });
+    }
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshIfStale();
+  });
+  window.addEventListener('focus', () => refreshIfStale());
+  window.addEventListener('online', () => refreshIfStale(true));
+  window.addEventListener('pageshow', event => refreshIfStale(event.persisted));
 }
 
 function boot() {
