@@ -181,22 +181,32 @@ function resolvePageName() {
   return LEGACY_PAGE_MAP[pathPage] || 'home';
 }
 
-function setWindowScrollTop() {
-  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
+let currentPageName = resolvePageName();
+const pageScrollPositions = {};
+
+function setWindowScrollTop(y = 0) {
+  window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+  document.documentElement.scrollTop = y;
+  document.body.scrollTop = y;
 }
 
-function resetPageScrollToTop() {
-  setWindowScrollTop();
+function restorePageScroll(y = 0) {
+  setWindowScrollTop(y);
   requestAnimationFrame(() => {
-    setWindowScrollTop();
-    requestAnimationFrame(setWindowScrollTop);
+    setWindowScrollTop(y);
+    requestAnimationFrame(() => setWindowScrollTop(y));
   });
 }
 
 function openPage(name, push = true, pathOverride = '') {
   const pageName = VALID_PAGES.includes(name) ? name : 'home';
+  
+  if (currentPageName === pageName && push) {
+    pageScrollPositions[pageName] = 0;
+  } else if (currentPageName) {
+    pageScrollPositions[currentPageName] = window.scrollY || document.documentElement.scrollTop || 0;
+  }
+
   $$('.page').forEach(page => page.classList.toggle('active', page.id === `page-${pageName}`));
   $$('[data-page]').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
   closeDrawer({ restoreScroll: false });
@@ -204,7 +214,14 @@ function openPage(name, push = true, pathOverride = '') {
 
   const nextPath = pathOverride || PAGE_PATHS[pageName] || '/';
   if (push && `${location.pathname}${location.search}` !== nextPath) history.pushState({ page: pageName }, '', nextPath);
-  resetPageScrollToTop();
+  
+  currentPageName = pageName;
+  if (pathOverride && push) {
+    pageScrollPositions[pageName] = 0;
+  }
+
+  const restoreY = pageScrollPositions[pageName] || 0;
+  restorePageScroll(restoreY);
 }
 
 
