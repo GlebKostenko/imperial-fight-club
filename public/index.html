@@ -7247,6 +7247,74 @@
         animation: none !important;
       }
     }
+
+    /* Hall gallery: equal frames for admin-managed photos */
+    .gallery-page .gallery-section {
+      background: linear-gradient(180deg, #fff 0%, rgba(246, 244, 235, .72) 100%);
+    }
+
+    .gallery-page .section-head {
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    .gallery-lead {
+      margin-top: 14px;
+      max-width: 620px;
+    }
+
+    .gallery-wall,
+    .gallery-wall[data-count] {
+      --gallery-gap: 20px;
+      display: grid !important;
+      grid-template-columns: repeat(auto-fill, 342px) !important;
+      grid-auto-rows: auto !important;
+      gap: var(--gallery-gap) !important;
+      align-items: start !important;
+      justify-content: center !important;
+    }
+
+    .gallery-tile,
+    .gallery-tile:nth-child(n) {
+      grid-column: auto !important;
+      grid-row: auto !important;
+      display: block !important;
+      width: 342px !important;
+      height: 262px !important;
+      min-width: 342px;
+      min-height: 262px;
+      padding: 10px;
+      border-radius: 14px !important;
+      border: 1px solid rgba(17, 17, 17, .12) !important;
+      background: #fff !important;
+      box-shadow: 0 16px 40px rgba(17, 17, 17, .08) !important;
+      overflow: hidden;
+    }
+
+    .gallery-tile .gallery-img,
+    .gallery-tile:nth-child(n) .gallery-img {
+      width: 320px !important;
+      height: 240px !important;
+      aspect-ratio: auto !important;
+      margin: 0 !important;
+      border-radius: 10px !important;
+      border: 1px solid rgba(17, 17, 17, .08) !important;
+      background: #d9d0bf;
+    }
+
+    .gallery-tile h3,
+    .gallery-tile p {
+      display: none !important;
+    }
+
+    .gallery-wall[data-count="1"] {
+      grid-template-columns: 342px !important;
+      justify-content: center;
+    }
+
+    .gallery-wall[data-count="2"] {
+      grid-template-columns: repeat(2, 342px) !important;
+    }
   </style>
 </head>
 
@@ -7597,13 +7665,14 @@
       </div>
     </section>
 
-    <section class="page" id="page-gallery">
-      <div class="section">
+    <section class="page gallery-page" id="page-gallery">
+      <div class="section gallery-section">
         <div class="container">
           <div class="section-head">
             <div>
               <div class="eyebrow">Пространство</div>
               <h1 class="section-title">Зал и атмосфера</h1>
+              <p class="section-text gallery-lead">Фотографии пространства, где проходят тренировки, сборы и первые победы.</p>
             </div>
           </div>
           <div class="gallery-wall" id="gallery-grid"></div>
@@ -7781,7 +7850,7 @@
       }
     })();
   </script>
-  <script src="/js/main.js?v=20260521-budget-gallery-redesign"></script>
+  <script src="/js/main.js?v=20260522-hall-fixed-photo-size"></script>
 </body>
 
 </html>

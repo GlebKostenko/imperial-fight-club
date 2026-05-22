@@ -841,8 +841,9 @@ function pricingCard(p) {
 }
 
 function galleryCard(g) {
-  const img = g.image ? `<img src="${API_URL}${escapeHtml(g.image)}" width="800" height="600" loading="lazy" decoding="async" alt="${escapeHtml(g.title)}">` : '<i class="fas fa-image" aria-hidden="true"></i>';
-  return `<article class="gallery-tile"><div class="gallery-img">${img}</div><h3 class="sr-only">${escapeHtml(g.title || CATEGORY_LABELS[g.category] || 'Фото зала')}</h3></article>`;
+  const title = g.title || CATEGORY_LABELS[g.category] || 'Фото зала';
+  const img = g.image ? `<img src="${escapeHtml(normalizeImageUrl(g.image))}" width="320" height="240" loading="lazy" decoding="async" alt="${escapeHtml(title)}">` : '<i class="fas fa-image" aria-hidden="true"></i>';
+  return `<article class="gallery-tile"><div class="gallery-img">${img}</div></article>`;
 }
 
 function normalizeDays(rawDay = '') {
@@ -1410,6 +1411,13 @@ function normalizeImageUrl(url = '') {
   return url.startsWith('/') ? `${API_URL}${url}` : url;
 }
 
+function galleryPageItems() {
+  const visible = sortByOrder(state.gallery.filter(item => item?.image && item.isActive !== false));
+  const pagePhotos = visible.filter(item => item.category === 'gym');
+  const fallbackPhotos = visible.filter(item => !['hero-ring', 'hero-mat'].includes(item.category));
+  return pagePhotos.length ? pagePhotos : fallbackPhotos;
+}
+
 function pickLatestGalleryByCategory(category) {
   return [...state.gallery]
     .filter(item => item.category === category && item.image)
@@ -1457,7 +1465,10 @@ function render({ refreshReveal = true } = {}) {
   renderTrainers({ refreshReveal });
   $('#home-pricing').innerHTML = pickHomeItems(state.pricing, 4).map(pricingCard).join('') || '<div class="empty">Добавьте тарифы в админ-панели.</div>';
   $('#pricing-grid').innerHTML = state.pricing.map(pricingCard).join('') || '<div class="empty">Пока нет тарифов.</div>';
-  $('#gallery-grid').innerHTML = state.gallery.map(galleryCard).join('') || '<div class="empty">Пока нет фото.</div>';
+  const galleryItems = galleryPageItems();
+  const galleryGrid = $('#gallery-grid');
+  galleryGrid.dataset.count = String(galleryItems.length);
+  galleryGrid.innerHTML = galleryItems.map(galleryCard).join('') || '<div class="empty">Пока нет фото.</div>';
   $('#stat-directions').textContent = state.directions.length || '—';
   $('#stat-trainers').textContent = state.trainers.length || '—';
   renderDirectionSelect();

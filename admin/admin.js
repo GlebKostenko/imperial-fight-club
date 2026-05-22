@@ -16,6 +16,7 @@ const navItems = document.querySelectorAll('.nav-item');
 const tabContents = document.querySelectorAll('.tab-content');
 
 let trainersData = [], directionsData = [], pricingData = [], galleryData = [], contactsData = [], directionIconsData = [], siteSettingsData = {};
+const HALL_GALLERY_LIMIT = 15;
 const SPORT_LABELS = { wrestling:'Вольная борьба', boxing:'Бокс', kickboxing:'Кикбоксинг', judo:'Дзюдо', sambo:'Самбо' };
 const AUDIENCE_LABELS = { men:'Мужчины', women:'Женщины', all:'Все' };
 const AGE_LABELS = { kids:'Дети', teens:'Подростки', adults:'Взрослые', all:'Все' };
@@ -525,7 +526,10 @@ async function apiPost(endpoint, data) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${res.status}`);
+    }
     return res.json();
 }
 
@@ -535,7 +539,10 @@ async function apiPut(endpoint, data) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${res.status}`);
+    }
     return res.json();
 }
 
@@ -929,6 +936,17 @@ function renderPricing() {
 
 function renderGallery() {
     const grid = document.getElementById('gallery-grid');
+    const addBtn = document.getElementById('add-gallery-btn');
+    const hallCount = countHallGalleryPhotos();
+    if (addBtn) {
+        addBtn.title = `Фото страницы «Зал»: ${hallCount}/${HALL_GALLERY_LIMIT}`;
+        let counter = addBtn.querySelector('[data-hall-gallery-count]');
+        if (!counter) {
+            addBtn.insertAdjacentHTML('beforeend', ' <span data-hall-gallery-count style="font-size:12px;font-weight:900;opacity:.72"></span>');
+            counter = addBtn.querySelector('[data-hall-gallery-count]');
+        }
+        if (counter) counter.textContent = `${hallCount}/${HALL_GALLERY_LIMIT}`;
+    }
     if (!galleryData.length) {
         grid.innerHTML = '<div class="empty-state"><i class="fas fa-images"></i><p>Нет фотографий</p></div>';
         return;
@@ -954,6 +972,20 @@ function renderGallery() {
             </div>
         </div>
     `).join('');
+}
+
+function countHallGalleryPhotos(excludeId = '') {
+    return galleryData.filter(item => item.category === 'gym' && item._id !== excludeId).length;
+}
+
+function canSaveHallGalleryPhoto(category = '', itemId = '') {
+    return category !== 'gym' || countHallGalleryPhotos(itemId) < HALL_GALLERY_LIMIT;
+}
+
+function uniqueHallGalleryTitle(previous = null) {
+    if (previous?.title) return previous.title;
+    const nextOrder = countHallGalleryPhotos() + 1;
+    return `Фото зала ${String(nextOrder).padStart(2, '0')} · ${Date.now()}`;
 }
 
 function renderContacts() {
@@ -1005,7 +1037,8 @@ function closeModal() {
 function getGalleryCropOptions(category = '') {
     if (category === 'hero-ring') return { aspect: '1 / 2', label: 'Кадр левой фотографии на главной' };
     if (category === 'hero-mat') return { aspect: '1 / 2', label: 'Кадр правой фотографии на главной' };
-    return { aspect: '4 / 3', label: 'Кадр фотографии зала' };
+    if (category === 'gym') return { aspect: '4 / 3', label: 'Кадр фотографии страницы «Зал» 320×240' };
+    return { aspect: '4 / 3', label: 'Кадр фотографии галереи' };
 }
 
 window.openTrainerModal = (event) => {
@@ -1654,34 +1687,16 @@ document.getElementById('add-gallery-btn').addEventListener('click', () => {
 
 function getGalleryForm(item = null) {
     const isEdit = !!item;
+    const hallCount = countHallGalleryPhotos(item?._id || '');
     return `
         <form id="gallery-form" data-id="${item?._id || ''}">
-            <div class="form-group">
-                <label>Категория фото</label>
-                <select name="category" id="gallery-category" required>
-                    <option value="hero-ring" ${item?.category === 'hero-ring' ? 'selected' : ''}>Главная: левая фотография ринга</option>
-                    <option value="hero-mat" ${item?.category === 'hero-mat' ? 'selected' : ''}>Главная: правая фотография борцовского зала</option>
-                    <option value="interior" ${item?.category === 'interior' ? 'selected' : ''}>Интерьер</option>
-                    <option value="amenities" ${item?.category === 'amenities' ? 'selected' : ''}>Удобства</option>
-                    <option value="training" ${item?.category === 'training' ? 'selected' : ''}>Тренировки</option>
-                    <option value="events" ${item?.category === 'events' ? 'selected' : ''}>Мероприятия</option>
-                </select>
-                <div class="hint">Для замены фото в первом блоке главной выберите одну из двух категорий «Главная». Новое фото автоматически заменит старое для этой позиции.</div>
-            </div>
-            <div class="form-group">
-                <label>Название</label>
-                <input type="text" name="title" value="${escapeAttr(item?.title || '')}" placeholder="Например: Ринг на главной">
-            </div>
-            <div class="form-group">
-                <label>Описание</label>
-                <textarea name="description">${item?.description || ''}</textarea>
-            </div>
+            <div class="hint" id="gallery-limit-hint" style="margin-bottom:14px">Страница «Зал»: ${hallCount}/${HALL_GALLERY_LIMIT} фото. Фото кадрируется под фиксированную рамку 320×240.</div>
             <div class="form-group">
                 <label>Фотография</label>
                 <label class="file-upload" for="gallery-photo">
                     <input type="file" id="gallery-photo" accept="image/*">
                     <div class="file-upload-label"><i class="fas fa-cloud-upload-alt" aria-hidden="true" style="font-size:24px;display:block;margin-bottom:8px;"></i>Нажмите или перетащите фото сюда</div>
-                    ${item?.image ? `<img src="${imageUrl(item.image)}" width="800" height="600" loading="lazy" decoding="async" class="file-preview" id="gallery-preview" alt="Фото галереи">` : '<img class="file-preview" id="gallery-preview" width="800" height="600" alt="" style="display:none">'}
+                    ${item?.image ? `<img src="${imageUrl(item.image)}" width="320" height="240" loading="lazy" decoding="async" class="file-preview" id="gallery-preview" alt="Фото зала">` : '<img class="file-preview" id="gallery-preview" width="320" height="240" alt="" style="display:none">'}
                 </label>
             </div>
             <div class="modal-footer">
@@ -1696,24 +1711,38 @@ function setupGalleryForm() {
     const form = document.getElementById('gallery-form');
     const fileInput = document.getElementById('gallery-photo');
     const preview = document.getElementById('gallery-preview');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const limitHint = document.getElementById('gallery-limit-hint');
     let imageUrlValue = '';
+    const currentItem = form.dataset.id ? galleryData.find(g => g._id === form.dataset.id) : null;
+    const category = currentItem?.category || 'gym';
 
-    function defaultTitle(category) {
-        if (category === 'hero-ring') return 'Фото ринга на главной';
-        if (category === 'hero-mat') return 'Фото борцовского зала на главной';
-        return 'Фото зала';
+    function updateLimitState() {
+        const itemId = form.dataset.id || '';
+        const hallCount = countHallGalleryPhotos(itemId);
+        const canSaveHall = canSaveHallGalleryPhoto(category, itemId);
+        if (limitHint) {
+            limitHint.textContent = `Страница «Зал»: ${hallCount}/${HALL_GALLERY_LIMIT} фото. Фото будет встроено в фиксированную рамку 320×240 без подписи на сайте.`;
+            limitHint.style.color = !canSaveHall ? 'var(--red)' : '';
+        }
+        if (fileInput) fileInput.disabled = !canSaveHall;
+        if (submitBtn) {
+            submitBtn.disabled = !canSaveHall;
+            submitBtn.title = !canSaveHall ? `На странице «Зал» уже ${HALL_GALLERY_LIMIT} фото` : '';
+        }
     }
 
-    const categorySelect = document.getElementById('gallery-category');
-    categorySelect?.addEventListener('change', () => {
-        if (!form.title.value.trim()) form.title.value = defaultTitle(categorySelect.value);
-    });
-    if (!form.title.value.trim()) form.title.value = defaultTitle(categorySelect.value);
+    updateLimitState();
 
     fileInput.addEventListener('change', async (e) => {
         if (e.target.files[0]) {
+            if (!canSaveHallGalleryPhoto(category, form.dataset.id || '')) {
+                showToast(`На странице «Зал» можно добавить до ${HALL_GALLERY_LIMIT} фотографий`, 'error');
+                e.target.value = '';
+                return;
+            }
             try {
-                imageUrlValue = await uploadFile(e.target.files[0], 'gallery', getGalleryCropOptions(categorySelect?.value));
+                imageUrlValue = await uploadFile(e.target.files[0], 'gallery', getGalleryCropOptions(category));
                 preview.src = imageUrl(imageUrlValue);
                 preview.style.display = 'block';
                 showToast('Фото загружено. Теперь нажмите «Сохранить».', 'success');
@@ -1725,16 +1754,19 @@ function setupGalleryForm() {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const category = form.category.value;
+        if (!canSaveHallGalleryPhoto(category, form.dataset.id || '')) {
+            showToast(`На странице «Зал» уже ${HALL_GALLERY_LIMIT} фотографий. Удалите лишнее фото или выберите другую категорию.`, 'error');
+            return;
+        }
         const existingSameHero = ['hero-ring', 'hero-mat'].includes(category)
             ? galleryData.find(g => g.category === category)
             : null;
         const targetId = form.dataset.id || existingSameHero?._id || '';
         const previous = targetId ? galleryData.find(g => g._id === targetId) : null;
         const formData = {
-            title: form.title.value.trim() || defaultTitle(category),
+            title: uniqueHallGalleryTitle(previous),
             category,
-            description: form.description.value,
+            description: '',
             image: imageUrlValue || previous?.image || '',
             isActive: true,
             order: previous?.order ?? (category === 'hero-ring' || category === 'hero-mat' ? 0 : galleryData.length + 1)
@@ -1809,7 +1841,7 @@ window.deleteContact = async (id) => {
 // ========== BUDGET SETTINGS ==========
 function budgetRuleRow(rule = {}) {
     const subitems = Array.isArray(rule.subitems) ? rule.subitems.join('\n') : (rule.subitems || '');
-    return `<div class="settings-contact-row budget-rule-row" data-budget-rule-row>
+    return `<div class="settings-contact-row budget-rule-row compact-row compact-budget-row" data-budget-rule-row>
         <div class="form-group"><label>Заголовок условия</label><input class="budget-rule-title" value="${escapeAttr(rule.title || '')}" placeholder="Например: Кто может подать заявку"></div>
         <div class="form-group"><label>Описание</label><textarea class="budget-rule-text" placeholder="Краткое описание условия">${escapeAttr(rule.text || '')}</textarea></div>
         <div class="form-group"><label>Подкатегории</label><textarea class="budget-rule-subitems" placeholder="Каждая подкатегория с новой строки">${escapeAttr(subitems)}</textarea></div>
@@ -1918,7 +1950,7 @@ function contactTypeOptions(selected = 'custom') {
 function contactSettingRow(contact = {}, index = Date.now()) {
     const type = contact.type || 'custom';
     const preset = CONTACT_TYPE_PRESETS[type] || CONTACT_TYPE_PRESETS.custom;
-    return `<div class="settings-contact-row" data-contact-row>
+    return `<div class="settings-contact-row compact-row compact-contact-row" data-contact-row>
         <div class="form-group"><label>Тип</label><select class="contact-setting-type">${contactTypeOptions(type)}</select></div>
         <div class="form-group"><label>Название</label><input class="contact-setting-label" value="${escapeAttr(contact.label || preset.label)}" placeholder="Telegram"></div>
         <div class="form-group"><label>Значение</label><input class="contact-setting-value" value="${escapeAttr(contact.value || '')}" placeholder="@club или +7…"></div>
@@ -1944,9 +1976,9 @@ function defaultFaqSettings() {
 }
 
 function faqSettingRow(item = {}) {
-    return `<div class="settings-contact-row faq-setting-row" data-faq-row>
+    return `<div class="settings-contact-row faq-setting-row compact-row compact-faq-row" data-faq-row>
         <div class="form-group"><label>Вопрос</label><input class="faq-setting-question" value="${escapeAttr(item.question || '')}" placeholder="Например: Можно ли прийти на пробную тренировку?"></div>
-        <div class="form-group"><label>Ответ</label><textarea class="faq-setting-answer" placeholder="Короткий ответ для главной страницы">${escapeAttr(item.answer || '')}</textarea><div class="hint">Ссылка в ответе: \\ref{Мой текст}{https://comdity.ru} или \\ref{Бюджетные места}{/budget}</div></div>
+        <div class="form-group"><label>Ответ</label><textarea class="faq-setting-answer" placeholder="Короткий ответ для главной страницы">${escapeAttr(item.answer || '')}</textarea></div>
         <label class="faq-active-control"><input class="faq-setting-active" type="checkbox" ${item.isActive === false ? '' : 'checked'}> Показывать</label>
         <div class="setting-row-actions">
             <button type="button" class="setting-row-action" title="Выше" aria-label="Поднять вопрос выше" onclick="moveSettingRow(this,-1)"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>

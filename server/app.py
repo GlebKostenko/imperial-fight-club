@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from passlib.context import CryptContext
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field, ConfigDict
@@ -525,12 +526,18 @@ async def get_gallery(category: Optional[str] = None, includeInactive: bool = Fa
 
 @app.post("/api/gallery")
 async def add_gallery(data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await create_item(COLLECTIONS["gallery"], data)
+    try:
+        return await create_item(COLLECTIONS["gallery"], data)
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail={"message": "Фото с таким служебным названием уже существует. Попробуйте сохранить ещё раз."})
 
 
 @app.put("/api/gallery/{gallery_id}")
 async def edit_gallery(gallery_id: str, data: dict[str, Any], admin=Depends(get_current_admin)):
-    return await update_item(COLLECTIONS["gallery"], gallery_id, data, "Фото не найдено")
+    try:
+        return await update_item(COLLECTIONS["gallery"], gallery_id, data, "Фото не найдено")
+    except DuplicateKeyError:
+        raise HTTPException(status_code=409, detail={"message": "Фото с таким служебным названием уже существует. Попробуйте сохранить ещё раз."})
 
 
 @app.delete("/api/gallery/{gallery_id}")
