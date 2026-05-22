@@ -1,0 +1,99 @@
+name: Deploy to server by IP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ip
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT || '22' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/fight-club' }}
+      HTTP_PORT: ${{ vars.HTTP_PORT || '80' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate settings
+        run: |
+          test -n "$SERVER_HOST" || (echo "Missing SERVER_HOST secret" && exit 1)
+          test -n "$SERVER_USER" || (echo "Missing SERVER_USER secret" && exit 1)
+          test -n "$SERVER_SSH_KEY" || (echo "Missing SERVER_SSH_KEY secret" && exit 1)
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$SERVER_PORT" "$SERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prepare target directory
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" 'bash -s' <<EOF
+          set -euo pipefail
+          mkdir -p "$DEPLOY_PATH"
+
+          if ! command -v rsync >/dev/null 2>&1; then
+            if [ "\$(id -u)" -eq 0 ]; then
+              apt-get update
+              apt-get install -y rsync
+            else
+              sudo apt-get update
+              sudo apt-get install -y rsync
+            fi
+          fi
+          EOF
+
+      - name: Sync project files
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p $SERVER_PORT" \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            --exclude '.idea/' \
+            --exclude '.codex-screenshots/' \
+            --exclude '.agents/' \
+            --exclude 'certbot/conf/' \
+            --exclude 'certbot/logs/' \
+            --exclude 'server/uploads/**' \
+            ./ "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/"
+
+      - name: Start or update HTTP deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" 'bash -s' <<EOF
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          chmod +x deploy-http.sh
+
+          if [ ! -f .env.http ]; then
+            ./deploy-http.sh setup "$SERVER_HOST" "$HTTP_PORT"
+          else
+            if grep -q '^PUBLIC_HOST=' .env.http; then
+              sed -i "s|^PUBLIC_HOST=.*|PUBLIC_HOST=$SERVER_HOST|" .env.http
+            else
+              printf '\nPUBLIC_HOST=%s\n' "$SERVER_HOST" >> .env.http
+            fi
+
+            if grep -q '^HTTP_PORT=' .env.http; then
+              sed -i "s|^HTTP_PORT=.*|HTTP_PORT=$HTTP_PORT|" .env.http
+            else
+              printf '\nHTTP_PORT=%s\n' "$HTTP_PORT" >> .env.http
+            fi
+
+            ./deploy-http.sh start
+          fi
+          EOF
