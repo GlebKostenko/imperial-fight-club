@@ -7315,6 +7315,38 @@
     .gallery-wall[data-count="2"] {
       grid-template-columns: repeat(2, 342px) !important;
     }
+
+    @media (max-width: 700px) {
+      .gallery-page .section-head {
+        align-items: start;
+        margin-bottom: 22px;
+      }
+
+      .gallery-wall,
+      .gallery-wall[data-count],
+      .gallery-wall[data-count="1"],
+      .gallery-wall[data-count="2"] {
+        --gallery-gap: 16px;
+        grid-template-columns: minmax(0, 1fr) !important;
+        width: 100% !important;
+      }
+
+      .gallery-tile,
+      .gallery-tile:nth-child(n) {
+        width: 100% !important;
+        height: auto !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        padding: 8px;
+      }
+
+      .gallery-tile .gallery-img,
+      .gallery-tile:nth-child(n) .gallery-img {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 4 / 3 !important;
+      }
+    }
   </style>
 </head>
 
