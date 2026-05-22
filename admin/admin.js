@@ -1003,7 +1003,10 @@ function renderContacts() {
 
     tbody.innerHTML = filtered.map(c => `
         <tr>
-            <td><strong>${c.name}</strong></td>
+            <td>
+                <strong>${c.name}</strong>
+                ${c.message ? `<div style="color:var(--gray-500);font-size:12px;margin-top:4px;max-width:240px;white-space:pre-wrap;line-height:1.4;">${escapeAttr(c.message)}</div>` : ''}
+            </td>
             <td>${c.phone}</td>
             <td>${escapeAttr(contactDirectionLabel(c.direction))}</td>
             <td>${escapeAttr(contactPreferredTimeLabel(c.preferredTime))}</td>
