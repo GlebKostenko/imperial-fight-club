@@ -1776,11 +1776,45 @@ function bindFocusRefresh() {
     }
   };
 
-  const resumeVideos = () => {
-    document.querySelectorAll('video[autoplay]').forEach(v => {
-      if (v.paused) v.play().catch(() => {});
-    });
+  let resumeVideosTimer = 0;
+  const autoplayVideos = () => Array.from(document.querySelectorAll('video[autoplay]'));
+  const canResumeMedia = () => document.visibilityState !== 'hidden';
+  const prepareAutoplayVideo = video => {
+    video.muted = true;
+    video.defaultMuted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
   };
+  const playAutoplayVideo = video => {
+    prepareAutoplayVideo(video);
+    if (!video.paused && !video.ended) return;
+    if (video.readyState === 0 || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+      video.load();
+    }
+    video.play().catch(() => {});
+  };
+  const resumeVideos = (attempts = 5) => {
+    window.clearTimeout(resumeVideosTimer);
+    if (!canResumeMedia()) return;
+    autoplayVideos().forEach(playAutoplayVideo);
+    if (attempts > 1) {
+      resumeVideosTimer = window.setTimeout(() => resumeVideos(attempts - 1), 350);
+    }
+  };
+
+  setInterval(() => {
+    if (canResumeMedia() && autoplayVideos().some(video => video.paused || video.ended)) {
+      resumeVideos(2);
+    }
+  }, 1500);
+
+  const resumeOnInteraction = () => resumeVideos(3);
+  ['pointerdown', 'touchstart', 'touchend', 'click', 'scroll'].forEach(eventName => {
+    document.addEventListener(eventName, resumeOnInteraction, { passive: true });
+  });
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
@@ -1792,10 +1826,21 @@ function bindFocusRefresh() {
     refreshIfStale();
     resumeVideos();
   });
+  window.addEventListener('blur', () => window.clearTimeout(resumeVideosTimer));
   window.addEventListener('online', () => refreshIfStale(true));
   window.addEventListener('pageshow', event => {
     refreshIfStale(event.persisted);
     resumeVideos();
+  });
+  window.addEventListener('pagehide', () => window.clearTimeout(resumeVideosTimer));
+  window.addEventListener('popstate', () => resumeVideos(3));
+  autoplayVideos().forEach(video => {
+    prepareAutoplayVideo(video);
+    ['pause', 'stalled', 'suspend', 'emptied'].forEach(eventName => {
+      video.addEventListener(eventName, () => {
+        if (canResumeMedia()) resumeVideos(3);
+      });
+    });
   });
 }
 
