@@ -1,5 +1,6 @@
 const API_URL = window.location.origin;
-const state = { directions: [], trainers: [], pricing: [], gallery: [], settings: {}, trainerFilter: 'all', scheduleFilter: 'all' };
+const _cached = (() => { try { return JSON.parse(localStorage.getItem('fightclub_data')) || {}; } catch(e) { return {}; } })();
+const state = { directions: _cached.directions || [], trainers: _cached.trainers || [], pricing: _cached.pricing || [], gallery: _cached.gallery || [], settings: _cached.settings || {}, trainerFilter: 'all', scheduleFilter: 'all' };
 const GROUP_LABELS = { beginners:'Новички', advanced:'Продвинутые', competition:'Соревновательная группа', all:'Все уровни' };
 const AUDIENCE_LABELS = { men:'Мужчины', women:'Женщины', all:'Все' };
 const AGE_LABELS = { kids:'Дети', teens:'Подростки', adults:'Взрослые', all:'Все' };
@@ -1736,6 +1737,7 @@ async function loadData({ refreshReveal = true, silent = false, retries = 3 } = 
         state.pricing = Array.isArray(pricing) ? pricing : [];
         state.gallery = Array.isArray(gallery) ? gallery : [];
         state.settings = settings || {};
+        try { localStorage.setItem('fightclub_data', JSON.stringify({ directions: state.directions, trainers: state.trainers, pricing: state.pricing, gallery: state.gallery, settings: state.settings })); } catch(e) {}
         lastDataLoadedAt = Date.now();
         lastDataLoadFailed = false;
         const initialTrainerFilter = trainerFilterFromUrl();
@@ -1809,6 +1811,9 @@ function bindFocusRefresh() {
   setInterval(() => {
     if (canResumeMedia() && autoplayVideos().some(video => video.paused || video.ended)) {
       resumeVideos(2);
+    }
+    if (canResumeMedia() && lastDataLoadFailed && !dataLoadInFlight) {
+      loadData({ refreshReveal: true, silent: true, retries: 1 });
     }
   }, 1500);
 
