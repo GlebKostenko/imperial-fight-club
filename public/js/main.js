@@ -1777,7 +1777,12 @@ function bindFocusRefresh() {
   };
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') refreshIfStale();
+    if (document.visibilityState === 'visible') {
+      refreshIfStale();
+      document.querySelectorAll('video[autoplay]').forEach(v => {
+        if (v.paused) v.play().catch(() => {});
+      });
+    }
   });
   window.addEventListener('focus', () => refreshIfStale());
   window.addEventListener('online', () => refreshIfStale(true));
