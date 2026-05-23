@@ -149,8 +149,8 @@ function escapeHtml(value = '') {
 }
 
 async function apiGet(endpoint) {
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    cache: 'no-store',
+  const url = `${API_URL}${endpoint}${endpoint.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  const res = await fetch(url, {
     headers: { 'Accept': 'application/json' }
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1776,17 +1776,27 @@ function bindFocusRefresh() {
     }
   };
 
+  const resumeVideos = () => {
+    document.querySelectorAll('video[autoplay]').forEach(v => {
+      if (v.paused) v.play().catch(() => {});
+    });
+  };
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       refreshIfStale();
-      document.querySelectorAll('video[autoplay]').forEach(v => {
-        if (v.paused) v.play().catch(() => {});
-      });
+      resumeVideos();
     }
   });
-  window.addEventListener('focus', () => refreshIfStale());
+  window.addEventListener('focus', () => {
+    refreshIfStale();
+    resumeVideos();
+  });
   window.addEventListener('online', () => refreshIfStale(true));
-  window.addEventListener('pageshow', event => refreshIfStale(event.persisted));
+  window.addEventListener('pageshow', event => {
+    refreshIfStale(event.persisted);
+    resumeVideos();
+  });
 }
 
 function boot() {
