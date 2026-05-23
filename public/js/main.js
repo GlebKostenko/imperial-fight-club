@@ -1720,13 +1720,14 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function loadData({ refreshReveal = true, silent = false, retries = 1 } = {}) {
+async function loadData({ refreshReveal = true, silent = false, retries = 3 } = {}) {
   if (dataLoadInFlight) return dataLoadInFlight;
 
   dataLoadInFlight = (async () => {
     let lastError = null;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
+        if (attempt === 0) await delay(100);
         const [directions, trainers, pricing, gallery, settings] = await Promise.all([
           apiGet('/api/directions'), apiGet('/api/trainers'), apiGet('/api/pricing'), apiGet('/api/gallery'), apiGet('/api/settings')
         ]);
@@ -1749,7 +1750,7 @@ async function loadData({ refreshReveal = true, silent = false, retries = 1 } = 
         return true;
       } catch (error) {
         lastError = error;
-        if (attempt < retries) await delay(900 * (attempt + 1));
+        if (attempt < retries) await delay(500 * (attempt + 1));
       }
     }
 
