@@ -1726,20 +1726,79 @@ async function loadData({ refreshReveal = true, silent = false, retries = 3 } = 
 
   dataLoadInFlight = (async () => {
     let lastError = null;
+    let anySuccess = false;
+
+    const fetchWithFallback = async (endpoint) => {
+      try {
+        return await apiGet(endpoint);
+      } catch (err) {
+        lastError = err;
+        console.warn(`Failed to fetch endpoint ${endpoint}:`, err);
+        return null;
+      }
+    };
+
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
-        if (attempt === 0) await delay(100);
+        // Cold-start / Resume warm-up delay: allow LTE/Wi-Fi to reconnect
+        if (attempt === 0) {
+          await delay(150);
+        } else {
+          // Progressive backoff: 800ms, 1600ms, 2400ms...
+          await delay(800 * attempt);
+        }
+
         const [directions, trainers, pricing, gallery, settings] = await Promise.all([
-          apiGet('/api/directions'), apiGet('/api/trainers'), apiGet('/api/pricing'), apiGet('/api/gallery'), apiGet('/api/settings')
+          fetchWithFallback('/api/directions'),
+          fetchWithFallback('/api/trainers'),
+          fetchWithFallback('/api/pricing'),
+          fetchWithFallback('/api/gallery'),
+          fetchWithFallback('/api/settings')
         ]);
-        state.directions = Array.isArray(directions) ? directions : [];
-        state.trainers = Array.isArray(trainers) ? trainers : [];
-        state.pricing = Array.isArray(pricing) ? pricing : [];
-        state.gallery = Array.isArray(gallery) ? gallery : [];
-        state.settings = settings || {};
-        try { localStorage.setItem('fightclub_data', JSON.stringify({ directions: state.directions, trainers: state.trainers, pricing: state.pricing, gallery: state.gallery, settings: state.settings })); } catch(e) {}
+
+        // Validate and apply only successful responses (prevent clearing good states with empty arrays)
+        let directionsUpdated = false;
+        let trainersUpdated = false;
+
+        if (directions !== null && Array.isArray(directions)) {
+          state.directions = directions;
+          directionsUpdated = true;
+          anySuccess = true;
+        }
+        if (trainers !== null && Array.isArray(trainers)) {
+          state.trainers = trainers;
+          trainersUpdated = true;
+          anySuccess = true;
+        }
+        if (pricing !== null && Array.isArray(pricing)) {
+          state.pricing = pricing;
+          anySuccess = true;
+        }
+        if (gallery !== null && Array.isArray(gallery)) {
+          state.gallery = gallery;
+          anySuccess = true;
+        }
+        if (settings !== null && typeof settings === 'object') {
+          state.settings = settings;
+          anySuccess = true;
+        }
+
+        // Cache successful states locally
+        if (anySuccess) {
+          try {
+            localStorage.setItem('fightclub_data', JSON.stringify({
+              directions: state.directions,
+              trainers: state.trainers,
+              pricing: state.pricing,
+              gallery: state.gallery,
+              settings: state.settings
+            }));
+          } catch (e) {}
+        }
+
         lastDataLoadedAt = Date.now();
-        lastDataLoadFailed = false;
+        lastDataLoadFailed = !anySuccess;
+
         const initialTrainerFilter = trainerFilterFromUrl();
         if (resolvePageName() === 'trainers' && initialTrainerFilter) {
           state.trainerFilter = initialTrainerFilter;
@@ -1748,18 +1807,24 @@ async function loadData({ refreshReveal = true, silent = false, retries = 3 } = 
         if (resolvePageName() === 'schedule' && initialScheduleFilter) {
           state.scheduleFilter = initialScheduleFilter;
         }
+
+        // Trigger UI render
         render({ refreshReveal });
-        return true;
+
+        // If we succeeded in getting the critical data, return true
+        if (directionsUpdated || trainersUpdated) {
+          return true;
+        }
       } catch (error) {
         lastError = error;
-        if (attempt < retries) await delay(500 * (attempt + 1));
       }
     }
 
-    lastDataLoadFailed = true;
-    console.warn('Site data load failed', lastError);
-    if (!silent) showToast('Ошибка загрузки данных сайта. Проверьте API.');
-    return false;
+    // Only set load failed if we couldn't load any critical data at all
+    lastDataLoadFailed = !anySuccess;
+    console.warn('Site critical data load failed', lastError);
+    if (!silent && !anySuccess) showToast('Ошибка соединения. Пожалуйста, обновите страницу.');
+    return anySuccess;
   })();
 
   try {
