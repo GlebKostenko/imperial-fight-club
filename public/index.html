@@ -7461,7 +7461,6 @@
                   const spacing = totalLength / charCount;
 
                   textGroup.innerHTML = '';
-                  const charElements = [];
 
                   for (let i = 0; i < charCount; i++) {
                     const char = repeatedText[i];
@@ -7493,35 +7492,30 @@
                     node.style.stroke = '#ffcc00';
                     node.style.strokeWidth = '0.07px';
 
+                    // --- СТАТИЧЕСКАЯ ОТРИСОВКА ---
+                    // Позиционируем каждый элемент вдоль кривой один раз на старте
+                    let currentDist = (i * spacing) % totalLength;
+                    if (currentDist < 0) currentDist += totalLength;
+
+                    const p1 = path.getPointAtLength(currentDist);
+                    const stepDelta = 0.1;
+                    let nextDist = (currentDist + stepDelta) % totalLength;
+                    const p2 = path.getPointAtLength(nextDist);
+
+                    const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
+
+                    // Удержание элементов строго на позиции -1.55 (ближе к внутреннему краю ленты)
+                    node.setAttribute('transform', `translate(${p1.x}, ${p1.y}) rotate(${angle}) translate(0, -0.35)`);
+
                     textGroup.appendChild(node);
-                    charElements.push(node);
                   }
 
-                  let animationOffset = 0;
-                  const speed = 0.04;
-
-                  const animateFrame = () => {
-                    // Вращение по часовой стрелке
-                    animationOffset += speed;
-
-                    for (let i = 0; i < charCount; i++) {
-                      let currentDist = (animationOffset + i * spacing) % totalLength;
-                      if (currentDist < 0) currentDist += totalLength;
-
-                      const p1 = path.getPointAtLength(currentDist);
-                      const stepDelta = 0.1;
-                      let nextDist = (currentDist + stepDelta) % totalLength;
-                      const p2 = path.getPointAtLength(nextDist);
-
-                      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-
-                      // Удержание элементов строго на позиции -1.55 (ближе к внутреннему краю ленты)
-                      charElements[i].setAttribute('transform', `translate(${p1.x}, ${p1.y}) rotate(${angle}) translate(0, -0.35)`);
-                    }
-                    requestAnimationFrame(animateFrame);
-                  };
-
-                  requestAnimationFrame(animateFrame);
+                  // Заглушки для обратной совместимости с внешними вызовами (например, prefers-reduced-motion)
+                  const ribbon = document.querySelector('.hero-orbit-ribbon');
+                  if (ribbon) {
+                    ribbon.pauseAnimations = () => {};
+                    ribbon.resumeAnimations = () => {};
+                  }
                 };
 
                 if (document.readyState === 'loading') {
@@ -7596,7 +7590,7 @@
               <div class="contact-list" data-contact-list></div>
               <div class="map"><iframe
                   src="https://yandex.ru/map-widget/v1/?ll=39.099703%2C45.011389&z=16&pt=39.099703%2C45.011389%2Cpm2rdm"
-                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="eager"
+                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="lazy"
                   referrerpolicy="no-referrer-when-downgrade"></iframe></div>
             </div>
             <form class="form contact-form">
@@ -7731,7 +7725,7 @@
               <div class="contact-list" data-contact-list></div>
               <div class="map"><iframe
                   src="https://yandex.ru/map-widget/v1/?ll=39.099703%2C45.011389&z=16&pt=39.099703%2C45.011389%2Cpm2rdm"
-                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="eager"
+                  width="100%" height="100%" frameborder="0" allowfullscreen="true" loading="lazy"
                   referrerpolicy="no-referrer-when-downgrade"></iframe></div>
             </div>
             <form class="form contact-form">
