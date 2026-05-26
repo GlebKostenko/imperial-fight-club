@@ -183,7 +183,13 @@ function resolvePageName() {
 }
 
 let currentPageName = resolvePageName();
-const pageScrollPositions = {};
+const pageScrollPositions = (() => {
+  try {
+    return JSON.parse(sessionStorage.getItem('fightclub_scroll_positions')) || {};
+  } catch (e) {
+    return {};
+  }
+})();
 
 function setWindowScrollTop(y = 0) {
   window.scrollTo({ top: y, left: 0, behavior: 'instant' });
@@ -207,6 +213,9 @@ function openPage(name, push = true, pathOverride = '') {
   } else if (currentPageName) {
     pageScrollPositions[currentPageName] = window.scrollY || document.documentElement.scrollTop || 0;
   }
+  try {
+    sessionStorage.setItem('fightclub_scroll_positions', JSON.stringify(pageScrollPositions));
+  } catch (e) {}
 
   $$('.page').forEach(page => page.classList.toggle('active', page.id === `page-${pageName}`));
   $$('[data-page]').forEach(link => link.classList.toggle('active', link.dataset.page === pageName));
@@ -219,6 +228,9 @@ function openPage(name, push = true, pathOverride = '') {
   currentPageName = pageName;
   if (pathOverride && push) {
     pageScrollPositions[pageName] = 0;
+    try {
+      sessionStorage.setItem('fightclub_scroll_positions', JSON.stringify(pageScrollPositions));
+    } catch (e) {}
   }
 
   const restoreY = pageScrollPositions[pageName] || 0;
@@ -1783,8 +1795,8 @@ async function loadData({ refreshReveal = true, silent = false, retries = 3 } = 
           anySuccess = true;
         }
 
-        // Cache successful states locally
-        if (anySuccess) {
+        // Cache successful states locally only if we have valid non-empty directions and trainers data
+        if (anySuccess && state.directions.length > 0 && state.trainers.length > 0) {
           try {
             localStorage.setItem('fightclub_data', JSON.stringify({
               directions: state.directions,
@@ -1931,6 +1943,10 @@ function boot() {
   });
   $('#openDrawer')?.addEventListener('click', toggleDrawer);
   $('#drawerBackdrop')?.addEventListener('click', closeDrawer);
+  
+  // Render cached data immediately so the user sees correct data instantly on cold start
+  render({ refreshReveal: false });
+  
   openPage(resolvePageName(), false);
   loadData();
 }
